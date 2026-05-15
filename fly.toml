@@ -1,48 +1,46 @@
-# Fly.io deployment config for market-data-scanner
-# After `fly launch` adjusts this, set secrets via:
-#   fly secrets set ETHEREUM_RPC_URL=... ETHERSCAN_API_KEY=... ANTHROPIC_API_KEY=... ADMIN_PASSWORD=...
-# Provision Postgres separately:
-#   fly postgres create --name scanner-pg
-#   fly postgres attach scanner-pg
-# Then connect via `fly proxy 5432 -a scanner-pg` and run `CREATE EXTENSION vector;`
+# fly.toml app configuration file generated for market-data-scanner on 2026-05-15T16:17:14-04:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = "market-data-scanner"
-primary_region = "ord"
+app = 'market-data-scanner'
+primary_region = 'iad'
 
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = 'Dockerfile'
 
 [env]
-  PORT = "8080"
-  INGESTION_MODE = "live"
-  SPRING_PROFILES_ACTIVE = "prod"
-  JAVA_TOOL_OPTIONS = "-XX:MaxRAMPercentage=75"
+  INGESTION_MODE = 'live'
+  JAVA_TOOL_OPTIONS = '-XX:MaxRAMPercentage=75'
+  PORT = '8080'
+  SPRING_PROFILES_ACTIVE = 'prod'
 
 [http_service]
   internal_port = 8080
   force_https = true
-  auto_stop_machines = false
+  auto_stop_machines = 'off'
   auto_start_machines = true
   min_machines_running = 1
 
   [http_service.concurrency]
-    type = "requests"
-    soft_limit = 200
+    type = 'requests'
     hard_limit = 250
+    soft_limit = 200
 
-[[http_service.checks]]
-  grace_period = "60s"
-  interval = "15s"
-  method = "GET"
-  timeout = "5s"
-  path = "/actuator/health"
+  [[http_service.checks]]
+    interval = '15s'
+    timeout = '5s'
+    grace_period = '1m0s'
+    method = 'GET'
+    path = '/actuator/health'
 
 [[vm]]
-  size = "shared-cpu-1x"
-  memory = "1gb"
-  cpu_kind = "shared"
+  size = 'shared-cpu-1x'
+  memory = '1gb'
+  cpu_kind = 'shared'
   cpus = 1
+  memory_mb = 1024
 
-[metrics]
+[[metrics]]
   port = 8080
-  path = "/actuator/prometheus"
+  path = '/actuator/prometheus'

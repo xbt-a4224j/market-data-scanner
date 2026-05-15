@@ -12,12 +12,14 @@ import org.springframework.security.provisioning.InMemoryUserDetailsManager
 import org.springframework.security.web.SecurityFilterChain
 
 /**
- * HTTP Basic auth on the admin sub-tree. Everything else (dashboard, SSE,
- * actuator health and prometheus) is public so the demo URL works without
- * a password.
+ * HTTP Basic auth on the entire app. Only `/actuator/health` (Fly's liveness
+ * probe) and `/actuator/prometheus` (Fly's metrics scraper, fetched over the
+ * private 6PN network) are exempt. Everything else - dashboard, per-pool
+ * detail, per-heuristic tabs, SSE feed, charts JSON, admin sub-tree -
+ * requires the REVIEWER role.
  *
- * Single admin user provisioned from ADMIN_USERNAME and ADMIN_PASSWORD env
- * vars. Password is BCrypt-hashed in memory; never stored cleartext.
+ * Single user provisioned from ADMIN_USERNAME and ADMIN_PASSWORD env vars.
+ * Password is BCrypt-hashed in memory; never stored cleartext.
  */
 @Configuration
 class SecurityConfig(
@@ -43,8 +45,15 @@ class SecurityConfig(
             .csrf { it.disable() }  // SSE + htmx posts; CSRF off per dashboard's threat model
             .authorizeHttpRequests { auth ->
                 auth
-                    .requestMatchers("/admin/**").hasRole("REVIEWER")
-                    .anyRequest().permitAll()
+                    // Public: liveness probe (Fly health check) + metrics
+                    // (Fly's prometheus scraper hits this over the private
+                    // 6PN network).
+                    .requestMatchers("/actuator/health", "/actuator/prometheus").permitAll()
+                    // Static assets (CSS / JS) public so the browser-supplied
+                    // basic-auth challenge can render the dashboard's chrome.
+                    .requestMatchers("/css/**", "/js/**", "/favicon.ico").permitAll()
+                    // Everything else requires auth.
+                    .anyRequest().hasRole("REVIEWER")
             }
             .httpBasic { }
             .formLogin { it.disable() }
