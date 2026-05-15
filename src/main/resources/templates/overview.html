@@ -38,6 +38,26 @@
         </div>
     </section>
 
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 18px; margin-bottom: 24px;">
+        <div class="card">
+            <div class="card-header">
+                <h2>Composite score distribution</h2>
+                <span class="desc">last 50 detections</span>
+            </div>
+            <div style="padding: 14px 18px; height: 240px;">
+                <canvas id="scoreHistogram"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h2>Risk band split</h2>
+            </div>
+            <div style="padding: 14px 18px; height: 240px;">
+                <canvas id="riskDonut"></canvas>
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header">
             <h2>Live feed</h2>
@@ -74,5 +94,57 @@
     </div>
 </main>
 <div th:replace="~{fragments/header :: foot}"></div>
+
+<script>
+(async function () {
+    const fetchJson = (u) => fetch(u).then(r => r.json());
+
+    const hist = await fetchJson('/api/charts/score-histogram');
+    new Chart(document.getElementById('scoreHistogram'), {
+        type: 'bar',
+        data: {
+            labels: hist.labels,
+            datasets: [{
+                label: 'Detections',
+                data: hist.data,
+                backgroundColor: hist.labels.map((_, i) =>
+                    i >= 7 ? '#fecaca' : i >= 4 ? '#fde68a' : '#a7f3d0'),
+                borderColor: hist.labels.map((_, i) =>
+                    i >= 7 ? '#b91c1c' : i >= 4 ? '#b45309' : '#047857'),
+                borderWidth: 1,
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false }, ticks: { font: { size: 10, family: 'SF Mono, monospace' } } },
+                y: { beginAtZero: true, grid: { color: '#f5f5f4' }, ticks: { precision: 0, font: { size: 10 } } },
+            },
+        },
+    });
+
+    const bands = await fetchJson('/api/charts/risk-bands');
+    new Chart(document.getElementById('riskDonut'), {
+        type: 'doughnut',
+        data: {
+            labels: bands.labels,
+            datasets: [{
+                data: bands.data,
+                backgroundColor: bands.colors,
+                borderWidth: 0,
+            }],
+        },
+        options: {
+            maintainAspectRatio: false,
+            responsive: true,
+            plugins: {
+                legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 10 } },
+            },
+        },
+    });
+})();
+</script>
 </body>
 </html>
