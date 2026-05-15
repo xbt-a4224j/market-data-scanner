@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('Backfill')}"></head>
+<body>
+<div th:replace="~{fragments/header :: topbar('admin')}"></div>
+<main>
+    <h1 class="page-title">Backfill historical blocks</h1>
+    <p class="page-subtitle">
+        Replay any block range through the live pipeline. Same heuristics, same
+        scoring, same persistence - only the BlockSource changes.
+    </p>
+
+    <section class="stats">
+        <div class="stat">
+            <div class="label">Earliest processed</div>
+            <div class="value mono" th:text="${watermark.earliest}">—</div>
+        </div>
+        <div class="stat">
+            <div class="label">Latest processed</div>
+            <div class="value mono" th:text="${watermark.latest}">—</div>
+        </div>
+    </section>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Trigger a run</h2>
+            <span class="desc">choose ONE input mode</span>
+        </div>
+        <div style="padding: 18px;">
+            <form action="/admin/backfill" method="post" class="bf-form">
+                <fieldset>
+                    <legend>By lookback</legend>
+                    <label>Last N days <input type="number" name="lookbackDays" min="1" max="30" placeholder="e.g. 7"/></label>
+                </fieldset>
+                <fieldset>
+                    <legend>By block range</legend>
+                    <label>From block <input type="number" name="fromBlock" placeholder="e.g. 22500000"/></label>
+                    <label>To block <input type="number" name="toBlock" placeholder="e.g. 22510000"/></label>
+                </fieldset>
+                <fieldset>
+                    <legend>By date range (UTC)</legend>
+                    <label>From date <input type="text" name="fromDate" placeholder="2026-05-01T00:00:00Z"/></label>
+                    <label>To date <input type="text" name="toDate" placeholder="2026-05-08T00:00:00Z"/></label>
+                </fieldset>
+                <button type="submit" class="primary">Start backfill</button>
+            </form>
+        </div>
+    </div>
+</main>
+<div th:replace="~{fragments/header :: foot}"></div>
+
+<style>
+.bf-form { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; margin-bottom: 14px; }
+.bf-form fieldset { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; }
+.bf-form legend { font-size: 11px; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.05em; padding: 0 4px; }
+.bf-form label { display: block; font-size: 12px; color: var(--text-2); margin-bottom: 8px; }
+.bf-form input { width: 100%; margin-top: 4px; padding: 6px 8px; border: 1px solid var(--border-2); border-radius: 4px; font-family: var(--mono); font-size: 12px; background: var(--surface); }
+.bf-form input:focus { outline: none; border-color: var(--link); box-shadow: 0 0 0 3px rgba(29, 78, 216, 0.1); }
+.primary {
+    background: var(--accent); color: white; border: 1px solid var(--accent);
+    padding: 8px 16px; border-radius: var(--radius);
+    font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.primary:hover { background: #000; }
+@media (max-width: 800px) {
+  .bf-form { grid-template-columns: 1fr; }
+}
+</style>
+</body>
+</html>

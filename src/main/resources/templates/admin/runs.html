@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('Ingestion runs')}"></head>
+<body>
+<div th:replace="~{fragments/header :: topbar('admin')}"></div>
+<main>
+    <h1 class="page-title">Ingestion runs</h1>
+    <p class="page-subtitle">
+        Live and historical runs. Each backfill or live subscription gets one row.
+    </p>
+
+    <section class="stats">
+        <div class="stat">
+            <div class="label">Active runs</div>
+            <div class="value" th:text="${running.size()}">0</div>
+        </div>
+        <div class="stat">
+            <div class="label">Earliest processed block</div>
+            <div class="value mono" th:text="${watermark.earliest}">—</div>
+        </div>
+        <div class="stat">
+            <div class="label">Latest processed block</div>
+            <div class="value mono" th:text="${watermark.latest}">—</div>
+        </div>
+    </section>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Recent runs</h2>
+            <span class="desc">last 20</span>
+        </div>
+        <table class="feed">
+            <thead>
+            <tr>
+                <th>Run #</th>
+                <th>Mode</th>
+                <th>Started</th>
+                <th>Ended</th>
+                <th>Range</th>
+                <th>Last block</th>
+                <th>Pools</th>
+                <th>Status</th>
+                <th>Error</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${recent.isEmpty()}">
+                <td colspan="9" class="empty">No runs yet. Trigger one from <a th:href="@{/admin/backfill}">Backfill</a>.</td>
+            </tr>
+            <th:block th:unless="${recent.isEmpty()}" th:each="r : ${recent}">
+                <tr>
+                    <td class="mono" th:text="|#${r.id}|">#0</td>
+                    <td><span class="risk-badge"
+                              th:classappend="${r.mode == 'live' ? 'risk-low' : 'risk-med'}"
+                              th:text="${r.mode}">mode</span></td>
+                    <td class="mono muted" th:text="${#temporals.format(r.startedAt, 'yyyy-MM-dd HH:mm:ss')}">--</td>
+                    <td class="mono muted" th:text="${r.endedAt != null ? #temporals.format(r.endedAt, 'yyyy-MM-dd HH:mm:ss') : '—'}">--</td>
+                    <td class="mono numeric" th:text="${r.fromBlock} + (r.toBlock != null ? ' .. ' + r.toBlock : ' .. open')">0..0</td>
+                    <td class="mono numeric" th:text="${r.lastProcessedBlock != null ? r.lastProcessedBlock : '—'}">0</td>
+                    <td class="numeric" th:text="${r.poolsDetected}">0</td>
+                    <td>
+                        <span class="risk-badge"
+                              th:classappend="${r.status == 'completed' ? 'risk-low' : (r.status == 'running' ? 'risk-med' : 'risk-high')}"
+                              th:text="${r.status}">status</span>
+                    </td>
+                    <td class="muted" style="font-size: 11px; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                        th:text="${r.errorMessage != null ? r.errorMessage : '—'}"
+                        th:title="${r.errorMessage}">—</td>
+                </tr>
+            </th:block>
+            </tbody>
+        </table>
+    </div>
+</main>
+<div th:replace="~{fragments/header :: foot}"></div>
+</body>
+</html>
