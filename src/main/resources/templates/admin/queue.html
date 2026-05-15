@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('Review queue')}"></head>
+<body>
+<div th:replace="~{fragments/header :: topbar('admin')}"></div>
+<main>
+    <h1 class="page-title">Review queue</h1>
+    <p class="page-subtitle">
+        Pool detections at or above composite score
+        <span class="mono" th:text="${highRiskThreshold}">70</span>,
+        awaiting human classification.
+    </p>
+
+    <section class="stats">
+        <div class="stat">
+            <div class="label">Flagged awaiting review</div>
+            <div class="value" th:text="${flagged.size()}">0</div>
+            <div class="sub">composite >= <span th:text="${highRiskThreshold}">70</span></div>
+        </div>
+        <div class="stat">
+            <div class="label">Reviewed legitimate</div>
+            <div class="value" th:text="${counts.legitimate}">0</div>
+            <div class="sub">total all-time</div>
+        </div>
+        <div class="stat">
+            <div class="label">Reviewed scam</div>
+            <div class="value" th:text="${counts.scam}">0</div>
+            <div class="sub">total all-time</div>
+        </div>
+        <div class="stat">
+            <div class="label">Uncertain / deferred</div>
+            <div class="value">
+                <span th:text="${counts.uncertain}">0</span>
+                <span class="unit">/ <span th:text="${counts.deferred}">0</span></span>
+            </div>
+            <div class="sub">awaiting more data</div>
+        </div>
+    </section>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Awaiting classification</h2>
+            <span class="desc">highest composite first</span>
+            <span class="right" th:text="|${flagged.size()} pools|">0 pools</span>
+        </div>
+        <table class="feed">
+            <thead>
+            <tr>
+                <th>Detected</th>
+                <th>Token</th>
+                <th>Deployer</th>
+                <th>Composite</th>
+                <th>Signals</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${flagged.isEmpty()}">
+                <td colspan="6" class="empty">
+                    <div class="lead">Queue is clear.</div>
+                    <div>No pool detections are sitting above the high-risk threshold without a review decision.</div>
+                </td>
+            </tr>
+            <th:block th:unless="${flagged.isEmpty()}" th:each="p : ${flagged}">
+                <tr>
+                    <td class="mono muted" th:text="${p.detectedAtTime}">--:--:--</td>
+                    <td class="addr">
+                        <a th:href="@{|/pool/${p.id}|}"
+                           th:title="${p.tokenAddress}"
+                           th:text="${T(io.github.xbta4224j.scanner.api.PoolDetectionDto).shortAddress(p.tokenAddress)}">0x0..0</a>
+                    </td>
+                    <td class="addr muted"
+                        th:title="${p.deployerAddress}"
+                        th:text="${p.deployerAddress != '' ? T(io.github.xbta4224j.scanner.api.PoolDetectionDto).shortAddress(p.deployerAddress) : '—'}">0x0..0</td>
+                    <td>
+                        <span class="risk-badge risk-high" th:text="${p.compositeScore}">0</span>
+                    </td>
+                    <td>
+                        <th:block th:each="sig : ${p.flaggedSignals}">
+                            <span class="signal-tag" th:text="${sig}">signal</span>
+                        </th:block>
+                    </td>
+                    <td>
+                        <form th:action="@{|/admin/review/${p.id}|}" method="post" style="display: inline-flex; gap: 4px;">
+                            <button name="label" value="legitimate" class="action-btn legit">Legit</button>
+                            <button name="label" value="scam" class="action-btn scam">Scam</button>
+                            <button name="label" value="uncertain" class="action-btn uncertain">?</button>
+                            <button name="label" value="deferred" class="action-btn deferred">Defer</button>
+                        </form>
+                    </td>
+                </tr>
+            </th:block>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Recent decisions</h2>
+            <span class="desc">last 50</span>
+        </div>
+        <table class="feed">
+            <thead>
+            <tr><th>Reviewed at</th><th>Pool</th><th>Reviewer</th><th>Label</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+            <tr th:if="${recentReviews.isEmpty()}">
+                <td colspan="5" class="empty">No reviews yet.</td>
+            </tr>
+            <th:block th:unless="${recentReviews.isEmpty()}" th:each="r : ${recentReviews}">
+                <tr>
+                    <td class="mono muted" th:text="${#temporals.format(r.reviewedAt, 'yyyy-MM-dd HH:mm')}">--</td>
+                    <td><a th:href="@{|/pool/${r.poolId}|}" th:text="|#${r.poolId}|">#0</a></td>
+                    <td class="muted" th:text="${r.reviewer}">reviewer</td>
+                    <td>
+                        <span class="risk-badge"
+                              th:classappend="${r.label == 'scam' ? 'risk-high' : (r.label == 'legitimate' ? 'risk-low' : 'risk-med')}"
+                              th:text="${r.label}">label</span>
+                    </td>
+                    <td class="muted" th:text="${r.notes != null ? r.notes : '—'}">notes</td>
+                </tr>
+            </th:block>
+            </tbody>
+        </table>
+    </div>
+</main>
+<div th:replace="~{fragments/header :: foot}"></div>
+
+<style>
+.action-btn {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-2);
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: var(--sans);
+    transition: all 80ms;
+}
+.action-btn:hover { box-shadow: var(--shadow-sm); }
+.action-btn.legit:hover { background: var(--risk-low-bg); color: var(--risk-low); border-color: #a7f3d0; }
+.action-btn.scam:hover  { background: var(--risk-high-bg); color: var(--risk-high); border-color: #fecaca; }
+.action-btn.uncertain:hover, .action-btn.deferred:hover { background: var(--risk-med-bg); color: var(--risk-med); border-color: #fde68a; }
+</style>
+</body>
+</html>
