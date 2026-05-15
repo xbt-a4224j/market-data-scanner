@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('Corpus')}"></head>
+<body>
+<div th:replace="~{fragments/header :: topbar('admin')}"></div>
+<main>
+    <h1 class="page-title">Legitimate-token corpus</h1>
+    <p class="page-subtitle">
+        pgvector-backed embedding corpus that powers the metadata-similarity
+        impersonation heuristic. Refresh pulls the top-N tokens by market cap
+        from CoinGecko, resolves canonical deployers via Etherscan, embeds the
+        metadata via OpenAI text-embedding-3-small, and upserts to
+        <span class="mono">corpus_entries</span>.
+    </p>
+
+    <section class="stats">
+        <div class="stat">
+            <div class="label">Corpus size</div>
+            <div class="value" th:text="${count}">0</div>
+            <div class="sub">embedded tokens</div>
+        </div>
+        <div class="stat" th:each="entry : ${bySource}">
+            <div class="label" th:text="${entry.key}">source</div>
+            <div class="value" th:text="${entry.value}">0</div>
+        </div>
+    </section>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Refresh</h2>
+            <span class="desc">idempotent upsert on canonical_address - safe to re-run</span>
+        </div>
+        <div style="padding: 18px;">
+            <form action="/admin/corpus/refresh" method="post" style="display: flex; gap: 12px; align-items: end;">
+                <label style="font-size: 12px; color: var(--text-2);">
+                    Top-N tokens
+                    <input type="number" name="limit" value="100" min="10" max="250"
+                           style="display: block; margin-top: 4px; padding: 6px 8px; border: 1px solid var(--border-2); border-radius: 4px; font-family: var(--mono); font-size: 12px; width: 100px;"/>
+                </label>
+                <button type="submit"
+                        style="background: var(--accent); color: white; border: 1px solid var(--accent); padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer;">
+                    Refresh corpus
+                </button>
+                <span style="font-size: 11px; color: var(--text-3); margin-left: 12px;">
+                    cost ~$0.0002 per 100 tokens (OpenAI text-embedding-3-small @ $0.02/1M tokens)
+                </span>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>How the impersonation heuristic uses this</h2>
+        </div>
+        <div style="padding: 18px; color: var(--text-2); font-size: 13px; line-height: 1.6;">
+            <p>For each new pool's token, the
+                <a th:href="@{/heuristics/metadata_similarity}">MetadataSimilarityHeuristic</a>
+                embeds <span class="mono">"Token SYMBOL (Name). Newly deployed at 0x..."</span>
+                via OpenAI, runs a top-3 cosine search against this corpus, and
+                produces a high-risk score when:</p>
+            <ul style="font-size: 12px; color: var(--text-3); margin: 8px 0 0 16px;">
+                <li>the top match has cosine similarity &gt; 0.92, AND</li>
+                <li>the new token's deployer EOA does NOT match the canonical
+                    deployer of the matched corpus entry</li>
+            </ul>
+            <p style="margin-top: 12px;">That is the canonical impersonation
+                pattern: someone deploys a token named "USDC2" or "uSDC" from
+                a wallet that has nothing to do with Circle.</p>
+        </div>
+    </div>
+</main>
+<div th:replace="~{fragments/header :: foot}"></div>
+</body>
+</html>

@@ -37,12 +37,13 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.8.0")
 
-    // Spring AI - Anthropic chat (used in #11 admin/corpus + per-pool evidence summaries).
-    // Wired via the BOM imported below. The pgvector starter and embedding model are
-    // intentionally not pulled in here: the metadata-similarity heuristic stays stubbed
-    // until Issue #19 ships proper corpus ingestion. Until then the corpus_entries table
-    // exists empty and no embedding bean is required.
+    // Spring AI - Anthropic chat (per-pool evidence summary feature) + OpenAI
+    // embeddings (corpus ingestion + metadata-similarity heuristic, Issue #19).
+    // pgvector store wired separately; Hibernate can't map VECTOR(n) cleanly so
+    // CorpusEntryDao goes through JdbcTemplate instead of JPA for the embedding
+    // column.
     implementation("org.springframework.ai:spring-ai-starter-model-anthropic")
+    implementation("org.springframework.ai:spring-ai-starter-model-openai")
 
     // Web3 / Ethereum - core only; Web3j Spring Boot starter is no longer published,
     // wire Web3j and WebSocketService manually in config/Web3Config.kt (Issue #3).

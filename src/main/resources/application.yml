@@ -25,13 +25,20 @@ spring:
       api-key: ${ANTHROPIC_API_KEY:}
       chat:
         options:
-          model: claude-opus-4-7              # used by per-pool evidence summaries (Issue #11)
+          model: claude-opus-4-7              # per-pool evidence summaries
           max-tokens: 800
           temperature: 0.2
-    # pgvector store + embedding model intentionally absent until Issue #19 ships
-    # the corpus ingestion pipeline. The corpus_entries table exists (V2 migration)
-    # but stays empty; the metadata-similarity heuristic is a stub that returns a
-    # neutral 0-confidence result.
+    openai:
+      api-key: ${OPENAI_API_KEY:}
+      embedding:
+        options:
+          model: text-embedding-3-small        # 1536-dim, $0.02/1M tokens
+      chat:
+        # We don't use OpenAI for chat (Anthropic owns that) - this section
+        # is here only because spring-ai-starter-model-openai auto-configures
+        # both clients and bails if chat options are missing on some versions.
+        options:
+          model: gpt-4o-mini
 
   cache:
     cache-names: deployer-history, etherscan-labels
@@ -55,7 +62,7 @@ ethereum:
 
 etherscan:
   api-key: ${ETHERSCAN_API_KEY:}
-  base-url: "https://api.etherscan.io/api"
+  base-url: "https://api.etherscan.io/v2/api"
 
 heuristics:
   weights:
