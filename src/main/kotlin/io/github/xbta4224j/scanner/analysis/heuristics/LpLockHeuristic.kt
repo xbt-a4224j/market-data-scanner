@@ -4,35 +4,37 @@ import io.github.xbta4224j.scanner.analysis.HeuristicResult
 import io.github.xbta4224j.scanner.analysis.RiskHeuristic
 import io.github.xbta4224j.scanner.chain.LockContracts
 import io.github.xbta4224j.scanner.chain.MintLogReader
+import io.github.xbta4224j.scanner.chain.PriceOracle
 import io.github.xbta4224j.scanner.chain.TokenContext
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import java.math.BigDecimal
 import java.security.MessageDigest
 
 /**
- * Classifies how the new pool's initial liquidity is held: by the deployer
- * (high rug risk), in a known LP lock contract (low risk), burned (lowest
- * risk), routed via Uniswap V3's NonfungiblePositionManager (cannot tell from
- * Mint alone - falls back to medium risk + low confidence), or unknown.
+ * Classifies how the new pool's initial liquidity is held + values it in USD.
  *
- * The heuristic reads the FIRST Mint event for the pool between its creation
- * block and a small look-ahead window. The Mint event's `owner` topic
- * identifies who the V3 position is credited to.
+ * Owner classification: deployer-held (high rug risk), burned, locked in a
+ * known timelock contract (Unicrypt / Team.Finance / PinkLock / Mudra),
+ * routed via Uniswap V3's NonfungiblePositionManager (cannot tell from Mint
+ * alone - falls back to medium risk + low confidence), or unknown.
  *
- * Initial-liquidity USD valuation is intentionally NOT computed here - that
- * needs a price oracle (CoinGecko or sqrtPriceX96 derivation). Tracked as a
- * follow-up; for now the heuristic surfaces amount0/amount1 raw in evidence
- * for the dashboard to render.
+ * Initial-liquidity USD valuation: priced via [PriceOracle] (stables 1:1,
+ * WETH via CoinGecko spot). The "deployer-held LP + thin liquidity" pattern
+ * gets a small additional risk bump on top of the classification score
+ * when the USD value is below [THIN_LIQUIDITY_USD]. Above that threshold,
+ * the deployer-held score is unchanged - thinness is the qualifier.
  */
 @Component
 class LpLockHeuristic(
     private val mintReader: MintLogReader,
+    private val priceOracle: PriceOracle,
 ) : RiskHeuristic {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
     override val name: String = "lp_lock"
-    override val version: String = "1.0.0"
+    override val version: String = "1.1.0"
 
     override suspend fun evaluate(token: TokenContext): HeuristicResult {
         val fromBlock = token.blockNumber
@@ -58,21 +60,37 @@ class LpLockHeuristic(
         }
 
         val classification = classify(firstMint.owner.lowercase(), token.deployerAddress.lowercase())
-        val (score, confidence) = classification.scoreAndConfidence
+
+        // USD valuation: the Mint event's amount0 / amount1 correspond to
+        // (token0, token1) of the pool. Token0 < token1 by address-sort
+        // convention. We try both sides; whichever priced side returns a
+        // value gets used. (For WETH/USDC pools both sides will price; for
+        // novel-token pools usually only the pricing-pair side does.)
+        val pricedToken0 = priceOracle.valueLpSide(token.tokenAddress, firstMint.amount0)
+        val pricedToken1 = priceOracle.valueLpSide(token.pairedWithAddress, firstMint.amount1)
+        val pricedSide = pricedToken0 ?: pricedToken1
+        val initialLiquidityUsd: BigDecimal? = pricedSide?.multiply(BigDecimal(2))  // both sides ~equal value at mint
+
+        val (baseScore, baseConfidence) = classification.scoreAndConfidence
+        val (score, thinLiquidityFlag) = applyThinLiquidityBump(baseScore, classification, initialLiquidityUsd)
+
+        val evidence: MutableMap<String, Any> = mutableMapOf(
+            "lpClassification" to classification.label,
+            "lpOwner" to firstMint.owner,
+            "mintSender" to firstMint.sender,
+            "amount0" to firstMint.amount0.toString(),
+            "amount1" to firstMint.amount1.toString(),
+            "mintBlock" to firstMint.blockNumber,
+            "mintTxHash" to firstMint.txHash,
+        )
+        initialLiquidityUsd?.let { evidence["initialLiquidityUsd"] = it.toPlainString() }
+        if (thinLiquidityFlag) evidence["thinLiquidityFlag"] = true
 
         return HeuristicResult(
             heuristicName = name,
             score = score,
-            confidence = confidence,
-            evidence = mapOf(
-                "lpClassification" to classification.label,
-                "lpOwner" to firstMint.owner,
-                "mintSender" to firstMint.sender,
-                "amount0" to firstMint.amount0.toString(),
-                "amount1" to firstMint.amount1.toString(),
-                "mintBlock" to firstMint.blockNumber,
-                "mintTxHash" to firstMint.txHash,
-            ),
+            confidence = baseConfidence,
+            evidence = evidence,
             heuristicVersion = version,
             inputsHash = inputsHash,
         )
@@ -84,6 +102,20 @@ class LpLockHeuristic(
         owner == deployer && deployer.isNotBlank() -> LpClassification.DEPLOYER_HELD
         owner == LockContracts.UNISWAP_V3_NPM -> LpClassification.VIA_NPM
         else -> LpClassification.UNKNOWN
+    }
+
+    /**
+     * Deployer-held LP with sub-$THIN_LIQUIDITY_USD initial value gets bumped
+     * to 0.96 (vs 0.92 baseline). All other classifications are unchanged.
+     */
+    private fun applyThinLiquidityBump(
+        baseScore: Double,
+        classification: LpClassification,
+        usd: BigDecimal?,
+    ): Pair<Double, Boolean> {
+        if (classification != LpClassification.DEPLOYER_HELD) return baseScore to false
+        if (usd == null) return baseScore to false
+        return if (usd < THIN_LIQUIDITY_USD) (0.96 to true) else (baseScore to false)
     }
 
     private enum class LpClassification(val label: String, val scoreAndConfidence: Pair<Double, Double>) {
@@ -102,5 +134,6 @@ class LpLockHeuristic(
 
     companion object {
         const val LOOKAHEAD_BLOCKS: Long = 50  // ~10min window for the first Mint to land
+        val THIN_LIQUIDITY_USD: BigDecimal = BigDecimal("2000")  // textbook rug seed liquidity
     }
 }

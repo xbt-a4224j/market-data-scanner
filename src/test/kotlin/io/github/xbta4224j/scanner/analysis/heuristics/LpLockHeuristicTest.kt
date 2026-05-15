@@ -2,6 +2,7 @@ package io.github.xbta4224j.scanner.analysis.heuristics
 
 import io.github.xbta4224j.scanner.chain.MintEvent
 import io.github.xbta4224j.scanner.chain.MintLogReader
+import io.github.xbta4224j.scanner.chain.PriceOracle
 import io.github.xbta4224j.scanner.chain.TokenContext
 import io.mockk.every
 import io.mockk.mockk
@@ -16,7 +17,10 @@ import java.time.OffsetDateTime
 class LpLockHeuristicTest {
 
     private val reader = mockk<MintLogReader>()
-    private val heuristic = LpLockHeuristic(reader)
+    private val priceOracle = mockk<PriceOracle>(relaxed = true) {
+        every { valueLpSide(any(), any()) } returns null
+    }
+    private val heuristic = LpLockHeuristic(reader, priceOracle)
 
     @ParameterizedTest(name = "{0} -> {1}")
     @MethodSource("scenarios")
