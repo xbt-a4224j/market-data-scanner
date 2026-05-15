@@ -84,6 +84,15 @@
                 <td colspan="8" class="empty">
                     <div class="lead">Waiting for the first pool detection.</div>
                     <div>The factory listener is subscribed to mainnet via WebSocket. New rows will appear here automatically.</div>
+                    <form action="/admin/demo-seed" method="post" style="margin-top: 16px;">
+                        <button type="submit"
+                                style="background: var(--accent); color: white; border: 1px solid var(--accent); padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer;">
+                            Seed demo data (admin auth)
+                        </button>
+                        <div style="font-size: 11px; color: var(--text-3); margin-top: 6px;">
+                            Inserts 50 synthetic detections from the curated scam + legit seed CSVs.
+                        </div>
+                    </form>
                 </td>
             </tr>
             <th:block th:unless="${recent.isEmpty()}" th:each="pool : ${recent}">
