@@ -17,6 +17,7 @@ import java.time.ZoneOffset
 
 /**
  * Decodes Uniswap V3 factory `PoolCreated` events into [TokenContext]s.
+ * Reference [EventDecoder] implementation for Layer 2 of the pipeline (ADR-006).
  *
  * Event signature:
  *   event PoolCreated(
@@ -32,11 +33,14 @@ import java.time.ZoneOffset
  * routing), the event is skipped - those are not "new token launches".
  */
 @Component
-class PoolCreatedDecoder {
+class PoolCreatedDecoder : EventDecoder<TokenContext> {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
-    fun decode(rawLog: Log, blockTimestampSeconds: Long? = null): TokenContext? {
+    override val topic: String get() = POOL_CREATED_TOPIC
+    override val sourceContract: String get() = UNISWAP_V3_FACTORY.lowercase()
+
+    override fun decode(rawLog: Log, blockTimestampSeconds: Long?): TokenContext? {
         if (rawLog.topics.size != 4) {
             log.debug("skipping log with unexpected topic count {} at tx {}", rawLog.topics.size, rawLog.transactionHash)
             return null
