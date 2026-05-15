@@ -6,9 +6,19 @@ on:
   pull_request:
     branches: [main]
 
+# Cancel superseded runs on the same branch - keeps CI feedback fast on rapid pushes.
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least-privilege token: this workflow only needs to read the source.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - uses: actions/checkout@v4
@@ -31,3 +41,4 @@ jobs:
         with:
           name: test-reports
           path: build/reports/tests/
+          retention-days: 7

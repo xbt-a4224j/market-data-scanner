@@ -26,3 +26,4 @@ data/*.parquet
 
 # Autonomous-run progress log (visible to user, not for the repo)
 PROGRESS
+PROGRESS.md
