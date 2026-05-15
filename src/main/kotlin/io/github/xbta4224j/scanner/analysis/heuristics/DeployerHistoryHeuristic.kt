@@ -36,12 +36,14 @@ import java.security.MessageDigest
 @Component
 class DeployerHistoryHeuristic(
     private val etherscan: EtherscanClient,
+    @org.springframework.beans.factory.annotation.Value("\${heuristics.deployer-history.deep-enrichment-enabled:false}")
+    private val deepEnrichmentEnabled: Boolean,
 ) : RiskHeuristic {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
     override val name: String = "deployer_history"
-    override val version: String = "1.0.0"
+    override val version: String = "1.1.0"
 
     override suspend fun evaluate(token: TokenContext): HeuristicResult {
         val deployer = token.deployerAddress.lowercase()
@@ -93,21 +95,51 @@ class DeployerHistoryHeuristic(
 
         val confidence = if (priorCount >= 10) 0.90 else if (priorCount >= 3) 0.75 else 0.55
 
+        val evidence: MutableMap<String, Any> = mutableMapOf(
+            "deployer" to deployer,
+            "priorCount" to priorCount,
+            "maxBurstPer24h" to maxBurstPer24h,
+            "medianGapSeconds" to medianGapSeconds,
+            "firstDeploymentTs" to firstTs,
+            "lastDeploymentTs" to lastTs,
+            "spanDays" to spanDays,
+            "factorCount" to factorCount,
+            "factorDensity" to factorDensity,
+        )
+
+        // Deep enrichment: per-prior-token last-Transfer lookup, computes
+        // median lifetime + abandonment rate. Off by default because each
+        // prior-token sample = 1 Etherscan call (50 priors -> 10s at the
+        // free 5/sec rate limit). Operators with paid Etherscan tiers can
+        // flip the config flag to enable.
+        if (deepEnrichmentEnabled && priorCount > 0) {
+            val sample = deployments.take(MAX_DEEP_SAMPLE)
+            val lifetimesSeconds = sample.mapNotNull { d ->
+                val lastTs = etherscan.lastTokenTransferTimestamp(d.contractAddress)
+                lastTs?.let { (it - d.timestampSeconds).coerceAtLeast(0) }
+            }
+            if (lifetimesSeconds.isNotEmpty()) {
+                val sortedLife = lifetimesSeconds.sorted()
+                val medianLifeSec = sortedLife[sortedLife.size / 2]
+                val abandonedCount = lifetimesSeconds.count { it < ABANDONED_LIFETIME_SECONDS }
+                val abandonmentRate = abandonedCount.toDouble() / lifetimesSeconds.size
+                evidence["deepEnrichment"] = mapOf(
+                    "sampleSize" to lifetimesSeconds.size,
+                    "medianLifetimeSeconds" to medianLifeSec,
+                    "medianLifetimeDays" to "%.1f".format(medianLifeSec / 86_400.0),
+                    "abandonmentRate" to "%.3f".format(abandonmentRate),
+                    "abandonedCount" to abandonedCount,
+                )
+                log.debug("deep enrichment for {}: medianLifetimeDays={}, abandonmentRate={}",
+                    deployer, medianLifeSec / 86_400.0, abandonmentRate)
+            }
+        }
+
         return HeuristicResult(
             heuristicName = name,
             score = score,
             confidence = confidence,
-            evidence = mapOf(
-                "deployer" to deployer,
-                "priorCount" to priorCount,
-                "maxBurstPer24h" to maxBurstPer24h,
-                "medianGapSeconds" to medianGapSeconds,
-                "firstDeploymentTs" to firstTs,
-                "lastDeploymentTs" to lastTs,
-                "spanDays" to spanDays,
-                "factorCount" to factorCount,
-                "factorDensity" to factorDensity,
-            ),
+            evidence = evidence,
             heuristicVersion = version,
             inputsHash = inputsHash,
         )
@@ -146,5 +178,10 @@ class DeployerHistoryHeuristic(
         const val FULL_DENSITY_AT: Int = 20
         const val COUNT_WEIGHT: Double = 0.55
         const val DENSITY_WEIGHT: Double = 0.45
+
+        /** Cap on per-prior-token Etherscan calls during deep enrichment. */
+        const val MAX_DEEP_SAMPLE: Int = 50
+        /** A prior token with no transfer activity for 7+ days post-deploy = abandoned. */
+        const val ABANDONED_LIFETIME_SECONDS: Long = 7L * 86_400
     }
 }

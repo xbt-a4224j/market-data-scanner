@@ -4,6 +4,7 @@ import io.github.xbta4224j.scanner.analysis.HeuristicResult
 import io.github.xbta4224j.scanner.analysis.RiskHeuristic
 import io.github.xbta4224j.scanner.chain.LockContracts
 import io.github.xbta4224j.scanner.chain.MintLogReader
+import io.github.xbta4224j.scanner.chain.NpmPositionTracer
 import io.github.xbta4224j.scanner.chain.PriceOracle
 import io.github.xbta4224j.scanner.chain.TokenContext
 import org.slf4j.LoggerFactory
@@ -16,8 +17,9 @@ import java.security.MessageDigest
  *
  * Owner classification: deployer-held (high rug risk), burned, locked in a
  * known timelock contract (Unicrypt / Team.Finance / PinkLock / Mudra),
- * routed via Uniswap V3's NonfungiblePositionManager (cannot tell from Mint
- * alone - falls back to medium risk + low confidence), or unknown.
+ * routed via Uniswap V3's NonfungiblePositionManager (in which case we
+ * trace the position-NFT recipient via the tx receipt and re-classify
+ * against THAT address), or unknown.
  *
  * Initial-liquidity USD valuation: priced via [PriceOracle] (stables 1:1,
  * WETH via CoinGecko spot). The "deployer-held LP + thin liquidity" pattern
@@ -29,12 +31,13 @@ import java.security.MessageDigest
 class LpLockHeuristic(
     private val mintReader: MintLogReader,
     private val priceOracle: PriceOracle,
+    private val npmTracer: NpmPositionTracer,
 ) : RiskHeuristic {
 
     private val log = LoggerFactory.getLogger(javaClass)
 
     override val name: String = "lp_lock"
-    override val version: String = "1.1.0"
+    override val version: String = "1.2.0"
 
     override suspend fun evaluate(token: TokenContext): HeuristicResult {
         val fromBlock = token.blockNumber
@@ -59,17 +62,27 @@ class LpLockHeuristic(
             )
         }
 
-        val classification = classify(firstMint.owner.lowercase(), token.deployerAddress.lowercase())
+        var classification = classify(firstMint.owner.lowercase(), token.deployerAddress.lowercase())
+        var tracedRecipient: String? = null
+
+        // NPM trace: when the Mint owner is the V3 NonfungiblePositionManager,
+        // the actual LP holder is the recipient of the position NFT minted in
+        // the same tx. Re-classify against THAT address.
+        if (classification == LpClassification.VIA_NPM) {
+            tracedRecipient = npmTracer.traceNpmRecipient(firstMint.txHash)
+            if (tracedRecipient != null) {
+                classification = classify(tracedRecipient, token.deployerAddress.lowercase())
+            }
+        }
 
         // USD valuation: the Mint event's amount0 / amount1 correspond to
         // (token0, token1) of the pool. Token0 < token1 by address-sort
         // convention. We try both sides; whichever priced side returns a
-        // value gets used. (For WETH/USDC pools both sides will price; for
-        // novel-token pools usually only the pricing-pair side does.)
+        // value gets used.
         val pricedToken0 = priceOracle.valueLpSide(token.tokenAddress, firstMint.amount0)
         val pricedToken1 = priceOracle.valueLpSide(token.pairedWithAddress, firstMint.amount1)
         val pricedSide = pricedToken0 ?: pricedToken1
-        val initialLiquidityUsd: BigDecimal? = pricedSide?.multiply(BigDecimal(2))  // both sides ~equal value at mint
+        val initialLiquidityUsd: BigDecimal? = pricedSide?.multiply(BigDecimal(2))
 
         val (baseScore, baseConfidence) = classification.scoreAndConfidence
         val (score, thinLiquidityFlag) = applyThinLiquidityBump(baseScore, classification, initialLiquidityUsd)
@@ -83,6 +96,7 @@ class LpLockHeuristic(
             "mintBlock" to firstMint.blockNumber,
             "mintTxHash" to firstMint.txHash,
         )
+        tracedRecipient?.let { evidence["npmTracedRecipient"] = it }
         initialLiquidityUsd?.let { evidence["initialLiquidityUsd"] = it.toPlainString() }
         if (thinLiquidityFlag) evidence["thinLiquidityFlag"] = true
 
@@ -133,7 +147,7 @@ class LpLockHeuristic(
     }
 
     companion object {
-        const val LOOKAHEAD_BLOCKS: Long = 50  // ~10min window for the first Mint to land
-        val THIN_LIQUIDITY_USD: BigDecimal = BigDecimal("2000")  // textbook rug seed liquidity
+        const val LOOKAHEAD_BLOCKS: Long = 50
+        val THIN_LIQUIDITY_USD: BigDecimal = BigDecimal("2000")
     }
 }

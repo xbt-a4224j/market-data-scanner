@@ -2,6 +2,7 @@ package io.github.xbta4224j.scanner.analysis.heuristics
 
 import io.github.xbta4224j.scanner.chain.MintEvent
 import io.github.xbta4224j.scanner.chain.MintLogReader
+import io.github.xbta4224j.scanner.chain.NpmPositionTracer
 import io.github.xbta4224j.scanner.chain.PriceOracle
 import io.github.xbta4224j.scanner.chain.TokenContext
 import io.mockk.every
@@ -20,7 +21,10 @@ class LpLockHeuristicTest {
     private val priceOracle = mockk<PriceOracle>(relaxed = true) {
         every { valueLpSide(any(), any()) } returns null
     }
-    private val heuristic = LpLockHeuristic(reader, priceOracle)
+    private val npmTracer = mockk<NpmPositionTracer> {
+        every { traceNpmRecipient(any()) } returns null
+    }
+    private val heuristic = LpLockHeuristic(reader, priceOracle, npmTracer)
 
     @ParameterizedTest(name = "{0} -> {1}")
     @MethodSource("scenarios")

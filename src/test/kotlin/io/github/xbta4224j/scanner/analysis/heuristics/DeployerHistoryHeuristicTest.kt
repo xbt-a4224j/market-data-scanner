@@ -30,7 +30,7 @@ import java.time.OffsetDateTime
 class DeployerHistoryHeuristicTest {
 
     private val etherscan = mockk<EtherscanClient>()
-    private val heuristic = DeployerHistoryHeuristic(etherscan)
+    private val heuristic = DeployerHistoryHeuristic(etherscan, deepEnrichmentEnabled = false)
     private val realParser = EtherscanClient(apiKey = "test", baseUrl = "https://localhost")
 
     @Test
@@ -119,7 +119,8 @@ class DeployerHistoryHeuristicTest {
         )
         // Largest window: indices 1, 2, 3, 4 fit in [t0+3600, t0+86500] which is ~82900s wide -> 4 entries
         // Or indices 0..3 fit if 0 to t0+86400+1 -> 86401s > 86400 -> 0 falls out -> 1, 2, 3 = 3
-        val burst = DeployerHistoryHeuristic(mockk()).maxBurstWindow(ts, windowSeconds = 86_400)
+        val burst = DeployerHistoryHeuristic(mockk(), deepEnrichmentEnabled = false)
+            .maxBurstWindow(ts, windowSeconds = 86_400)
         assertThat(burst).isGreaterThanOrEqualTo(3)
     }
 
