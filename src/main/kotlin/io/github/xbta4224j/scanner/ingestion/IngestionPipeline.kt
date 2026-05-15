@@ -1,6 +1,8 @@
 package io.github.xbta4224j.scanner.ingestion
 
 import io.github.xbta4224j.scanner.analysis.CompositeScorer
+import io.github.xbta4224j.scanner.api.PoolDetectionDto
+import io.github.xbta4224j.scanner.api.PoolStreamPublisher
 import io.github.xbta4224j.scanner.chain.BlockSource
 import io.github.xbta4224j.scanner.chain.TokenContext
 import io.github.xbta4224j.scanner.persistence.IngestionRun
@@ -37,6 +39,7 @@ class IngestionPipeline(
     private val processedBlocks: ProcessedBlockRepository,
     private val ingestionRuns: IngestionRunRepository,
     private val watermark: WatermarkService,
+    private val streamPublisher: PoolStreamPublisher,
     txManager: PlatformTransactionManager,
 ) {
 
@@ -127,7 +130,7 @@ class IngestionPipeline(
                 "stubbed" to r.stubbed,
             )
         }
-        val pdId = tx.execute {
+        val saved = tx.execute {
             // processed_blocks save - PK conflict = no-op (idempotency contract)
             runCatching {
                 processedBlocks.save(ProcessedBlock(
@@ -161,7 +164,12 @@ class IngestionPipeline(
             run.lastProcessedBlock = ctx.blockNumber
             run.lastProcessedBlockHash = ctx.blockHash
             ingestionRuns.save(run)
-            saved.id
+            saved
+        }
+
+        // Push to the live SSE feed for any subscribers
+        if (saved != null) {
+            streamPublisher.publish(PoolDetectionDto.from(saved))
         }
 
         // 5. Watermark extends - has its own @Transactional inside
@@ -171,6 +179,6 @@ class IngestionPipeline(
         }
 
         log.info("persisted pool detection id={} pool={} composite={} flagged={}",
-            pdId, ctx.poolAddress, composite.composite, flagged)
+            saved?.id, ctx.poolAddress, composite.composite, flagged)
     }
 }

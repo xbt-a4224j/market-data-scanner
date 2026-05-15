@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('Overview')}"></head>
+<body th:replace="~{fragments/header :: topbar('overview')}"></body>
+<body>
+<div th:replace="~{fragments/header :: topbar('overview')}"></div>
+<main>
+    <h1 class="page-title">Live pool detections</h1>
+    <p class="page-subtitle">
+        Streaming new Uniswap V3 pool creations on Ethereum mainnet, scored against
+        the implemented heuristic battery.
+    </p>
+
+    <section class="stats" th:with="s=${stats}">
+        <div class="stat">
+            <div class="label">Pools last hour</div>
+            <div class="value" th:text="${s.poolsLastHour}">0</div>
+            <div class="sub">since <span th:text="${#dates.format(new java.util.Date(), 'HH:mm')}">00:00</span></div>
+        </div>
+        <div class="stat">
+            <div class="label">% Flagged high-risk</div>
+            <div class="value">
+                <span th:text="${#numbers.formatDecimal(s.pctFlaggedHighLastHour, 1, 1)}">0.0</span><span class="unit">%</span>
+            </div>
+            <div class="sub">composite >= <span th:text="${s.highRiskThreshold}">70</span></div>
+        </div>
+        <div class="stat">
+            <div class="label">Top score (1h)</div>
+            <div class="value" th:text="${s.topScoreLastHour}">0</div>
+            <div class="sub">out of 100</div>
+        </div>
+        <div class="stat">
+            <div class="label">Heuristics implemented</div>
+            <div class="value">
+                <span th:text="${s.heuristicsImplemented}">3</span><span class="unit">/ <span th:text="${s.heuristicsTotal}">8</span></span>
+            </div>
+            <div class="sub">5 stubs scaffolded</div>
+        </div>
+    </section>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Live feed</h2>
+            <span class="desc">most recent first &middot; updates streaming via SSE</span>
+            <span class="right">last 50 detections</span>
+        </div>
+        <table class="feed" hx-ext="sse" hx-sse="connect:/stream">
+            <thead>
+            <tr>
+                <th>Detected</th>
+                <th>Block</th>
+                <th>Token</th>
+                <th>Deployer</th>
+                <th>Paired with</th>
+                <th>Fee</th>
+                <th>Composite</th>
+                <th>Flagged signals</th>
+            </tr>
+            </thead>
+            <tbody id="feed-tbody"
+                   hx-sse="swap:pool"
+                   hx-swap="afterbegin">
+            <tr th:if="${recent.isEmpty()}">
+                <td colspan="8" class="empty">
+                    <div class="lead">Waiting for the first pool detection.</div>
+                    <div>The factory listener is subscribed to mainnet via WebSocket. New rows will appear here automatically.</div>
+                </td>
+            </tr>
+            <th:block th:unless="${recent.isEmpty()}" th:each="pool : ${recent}">
+                <tr th:replace="~{fragments/feed-row :: row(${pool})}"></tr>
+            </th:block>
+            </tbody>
+        </table>
+    </div>
+</main>
+<div th:replace="~{fragments/header :: foot}"></div>
+</body>
+</html>

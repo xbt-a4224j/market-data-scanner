@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<tr th:fragment="row(pool)">
+    <td class="mono muted" th:text="${pool.detectedAtTime}">--:--:--</td>
+    <td class="numeric" th:text="${pool.blockNumber}">0</td>
+    <td class="addr">
+        <a th:href="@{|/pool/${pool.id}|}"
+           th:title="${pool.tokenAddress}"
+           th:text="${T(io.github.xbta4224j.scanner.api.PoolDetectionDto).shortAddress(pool.tokenAddress)}">0x0..0</a>
+    </td>
+    <td class="addr muted"
+        th:title="${pool.deployerAddress}"
+        th:text="${pool.deployerAddress != '' ? T(io.github.xbta4224j.scanner.api.PoolDetectionDto).shortAddress(pool.deployerAddress) : '—'}">0x0..0</td>
+    <td class="addr muted"
+        th:title="${pool.pairedWithAddress}"
+        th:text="${T(io.github.xbta4224j.scanner.api.PoolDetectionDto).shortAddress(pool.pairedWithAddress)}">0x0..0</td>
+    <td class="numeric" th:text="${pool.feeTier / 10000.0} + '%'">0.30%</td>
+    <td>
+        <span class="risk-badge"
+              th:classappend="'risk-' + ${pool.riskBand}"
+              th:text="${pool.compositeScore}">0</span>
+    </td>
+    <td>
+        <th:block th:each="sig : ${pool.flaggedSignals}">
+            <span class="signal-tag" th:text="${sig}">signal</span>
+        </th:block>
+        <span class="muted" th:if="${pool.flaggedSignals.isEmpty()}">&mdash;</span>
+    </td>
+</tr>
+</body>
+</html>

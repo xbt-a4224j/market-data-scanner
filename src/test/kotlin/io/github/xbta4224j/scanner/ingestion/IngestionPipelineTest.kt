@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.runBlocking
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -29,9 +30,18 @@ class IngestionPipelineTest @Autowired constructor(
 ) : PostgresIntegrationTest() {
 
     @BeforeEach
-    fun reset() {
-        // Tests are NOT @Transactional (the pipeline writes through real
-        // commits), so each test resets all shared state up front.
+    fun reset() = clearAllSharedState()
+
+    @AfterEach
+    fun cleanupAfterTest() = clearAllSharedState()
+
+    /**
+     * Pipeline tests write through real commits (no @Transactional rollback),
+     * so we must clear all shared state ourselves. Done both before AND after
+     * each test so other test classes that read this database see a clean
+     * slate after this class runs.
+     */
+    private fun clearAllSharedState() {
         poolDetections.deleteAll()
         processedBlocks.deleteAll()
         ingestionRuns.deleteAll()

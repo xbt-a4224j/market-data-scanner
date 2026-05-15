@@ -89,6 +89,10 @@ management:
       percentiles:
         heuristic.latency: 0.5, 0.95, 0.99
 
+admin:
+  username: ${ADMIN_USERNAME:admin}
+  password: ${ADMIN_PASSWORD:admin}
+
 server:
   port: ${PORT:8080}
   shutdown: graceful
