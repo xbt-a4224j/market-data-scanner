@@ -1,0 +1,50 @@
+# One-command local deploy: builds the app image, brings it up alongside
+# pgvector/pg16, wires env from .env. Use this instead of `docker compose
+# up -d` + `java -jar` when you want everything in containers.
+#
+#   docker compose -f compose.app.yml up --build
+#
+# The base docker-compose.yml is what `./gradlew bootRun` and bare `java
+# -jar` use; this file is for the all-in-Compose path.
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: scanner-postgres-app
+    environment:
+      POSTGRES_DB: scanner
+      POSTGRES_USER: scanner
+      POSTGRES_PASSWORD: scanner
+    ports:
+      - "5433:5432"
+    volumes:
+      - scanner_app_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scanner"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scanner-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/scanner
+      DATABASE_USERNAME: scanner
+      DATABASE_PASSWORD: scanner
+      INFURA_API_KEY: ${INFURA_API_KEY:-}
+      ETHERSCAN_API_KEY: ${ETHERSCAN_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
+    ports:
+      - "8080:8080"
+
+volumes:
+  scanner_app_pgdata:

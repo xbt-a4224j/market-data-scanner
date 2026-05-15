@@ -32,6 +32,16 @@
 
             <div class="card">
                 <div class="card-header">
+                    <h2>Why was this flagged?</h2>
+                    <span class="desc"
+                          th:text="${evidence.generated ? 'Claude-generated summary (cached)' : 'fallback message - Anthropic key not wired'}">summary</span>
+                </div>
+                <div style="padding: 18px 22px; font-size: 13px; line-height: 1.65; color: var(--text-2);"
+                     th:text="${evidence.markdown}">Loading…</div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
                     <h2>Per-heuristic results</h2>
                     <span class="desc">raw evidence payload from the composite scorer</span>
                 </div>
