@@ -1,0 +1,4 @@
+# The legitimate-token corpus is NOT seeded from this file.
+# Corpus population is handled by Issue #19 (Corpus Ingestion Pipeline) — see ISSUES.md.
+# This file exists only to anchor the path; CorpusLoader skips it.
+symbol,name,description,canonical_address,canonical_deployer,chain,category,source

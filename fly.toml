@@ -1,0 +1,48 @@
+# Fly.io deployment config for market-data-scanner
+# After `fly launch` adjusts this, set secrets via:
+#   fly secrets set ETHEREUM_RPC_URL=... ETHERSCAN_API_KEY=... OPENAI_API_KEY=... ADMIN_PASSWORD=...
+# Provision Postgres separately:
+#   fly postgres create --name scanner-pg
+#   fly postgres attach scanner-pg
+# Then connect via `fly proxy 5432 -a scanner-pg` and run `CREATE EXTENSION vector;`
+
+app = "market-data-scanner"
+primary_region = "ord"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+  INGESTION_MODE = "live"
+  SPRING_PROFILES_ACTIVE = "prod"
+  JAVA_TOOL_OPTIONS = "-XX:MaxRAMPercentage=75"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 200
+    hard_limit = 250
+
+[[http_service.checks]]
+  grace_period = "60s"
+  interval = "15s"
+  method = "GET"
+  timeout = "5s"
+  path = "/actuator/health"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "1gb"
+  cpu_kind = "shared"
+  cpus = 1
+
+[metrics]
+  port = 8080
+  path = "/actuator/prometheus"

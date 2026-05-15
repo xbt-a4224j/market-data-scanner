@@ -1,0 +1,25 @@
+.gradle/
+build/
+out/
+.idea/
+*.iml
+.kotlin/
+
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# JVM
+*.hprof
+hs_err_pid*
+
+# Local data
+data/cache/
+data/*.parquet
