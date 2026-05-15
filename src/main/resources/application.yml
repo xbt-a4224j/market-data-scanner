@@ -43,8 +43,10 @@ spring:
 
 ethereum:
   rpc:
-    http-url: ${ETHEREUM_RPC_URL:wss://eth-mainnet.g.alchemy.com/v2/demo}
-    websocket-url: ${ETHEREUM_WS_URL:wss://eth-mainnet.g.alchemy.com/v2/demo}
+    # Either set the full URL via ETHEREUM_RPC_URL / ETHEREUM_WS_URL, or set
+    # INFURA_API_KEY (or ALCHEMY_API_KEY) and let the URL be constructed.
+    http-url: ${ETHEREUM_RPC_URL:https://mainnet.infura.io/v3/${INFURA_API_KEY:demo}}
+    websocket-url: ${ETHEREUM_WS_URL:wss://mainnet.infura.io/ws/v3/${INFURA_API_KEY:demo}}
   factory:
     uniswap-v3-address: "0x1F98431c8aD98523631AE4a59f267346ea31F984"
   startup:
