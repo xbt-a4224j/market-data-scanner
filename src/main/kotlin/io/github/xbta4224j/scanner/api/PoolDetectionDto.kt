@@ -46,12 +46,14 @@ data class PoolDetectionDto(
             heuristicVersions = pd.heuristicVersions,
         )
 
+        @JvmStatic
         fun riskBand(score: Int): String = when {
             score >= 70 -> "high"
             score >= 40 -> "medium"
             else -> "low"
         }
 
+        @JvmStatic
         fun shortAddress(address: String): String =
             if (address.length >= 10) "${address.take(6)}..${address.takeLast(4)}" else address
     }
