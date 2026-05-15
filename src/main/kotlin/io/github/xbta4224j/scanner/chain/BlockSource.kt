@@ -1,0 +1,21 @@
+package io.github.xbta4224j.scanner.chain
+
+import kotlinx.coroutines.flow.Flow
+
+/**
+ * Sealed contract for "where do new TokenContexts come from".
+ *
+ * Two implementations:
+ *  - [LiveBlockSource]: a web3j WebSocket subscription to the Uniswap V3 factory.
+ *  - BackfillBlockSource (Issue #8): an iterator over a historical block range.
+ *
+ * Both produce the same `Flow<TokenContext>`. The IngestionPipeline (Issue #8)
+ * consumes either without knowing which it is - the same scoring, persistence,
+ * and reorg handling apply to both modes.
+ */
+sealed interface BlockSource {
+    val mode: Mode
+    fun subscribe(): Flow<TokenContext>
+
+    enum class Mode { LIVE, BACKFILL }
+}
