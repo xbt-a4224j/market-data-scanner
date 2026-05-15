@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Lazy
+import org.springframework.context.annotation.Primary
 import org.web3j.protocol.Web3j
 import org.web3j.protocol.http.HttpService
 import org.web3j.protocol.websocket.WebSocketClient
@@ -34,6 +35,7 @@ class Web3Config(
     private var openedWsService: WebSocketService? = null
 
     @Bean
+    @Primary
     fun web3jHttp(): Web3j {
         log.info("wiring web3j HTTP transport against {}", httpUrl.maskKey())
         return Web3j.build(HttpService(httpUrl))
