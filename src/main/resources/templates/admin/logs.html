@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('Logs')}"></head>
+<body>
+<div th:replace="~{fragments/header :: topbar('admin')}"></div>
+<main>
+    <h1 class="page-title">Application logs</h1>
+    <p class="page-subtitle">
+        In-memory buffer of the most recent <strong>5000</strong> log records.
+        Newest first. Filter by minimum level for a quick error/warn skim.
+    </p>
+
+    <section class="stats">
+        <div class="stat">
+            <div class="label">Buffered</div>
+            <div class="value" th:text="${summary.total}">0</div>
+            <div class="sub">of 5000 capacity</div>
+        </div>
+        <div class="stat">
+            <div class="label">Errors</div>
+            <div class="value" style="color: var(--risk-high);" th:text="${summary.errors}">0</div>
+        </div>
+        <div class="stat">
+            <div class="label">Warns</div>
+            <div class="value" style="color: var(--risk-med);" th:text="${summary.warns}">0</div>
+        </div>
+        <div class="stat">
+            <div class="label">Info</div>
+            <div class="value muted" th:text="${summary.info}">0</div>
+        </div>
+    </section>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Filter</h2>
+            <form action="/admin/logs" method="get" style="margin-left: auto; display: flex; gap: 8px; align-items: center;">
+                <label style="font-size: 12px; color: var(--text-3);">Min level:</label>
+                <select name="minLevel" onchange="this.form.submit()"
+                        style="padding: 4px 10px; border: 1px solid var(--border-2); border-radius: 4px; font-family: var(--mono); font-size: 12px;">
+                    <option value="ERROR" th:selected="${minLevel == 'ERROR'}">ERROR</option>
+                    <option value="WARN"  th:selected="${minLevel == 'WARN'}">WARN+</option>
+                    <option value="INFO"  th:selected="${minLevel == 'INFO'}">INFO+</option>
+                    <option value="DEBUG" th:selected="${minLevel == 'DEBUG'}">DEBUG+</option>
+                </select>
+                <input type="hidden" name="limit" th:value="${limit}"/>
+            </form>
+        </div>
+        <table class="feed">
+            <thead>
+            <tr>
+                <th style="width: 90px;">Time</th>
+                <th style="width: 70px;">Level</th>
+                <th style="width: 280px;">Logger</th>
+                <th>Message</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:if="${entries.isEmpty()}">
+                <td colspan="4" class="empty">
+                    <div class="lead">No log entries at this level.</div>
+                </td>
+            </tr>
+            <th:block th:unless="${entries.isEmpty()}" th:each="e : ${entries}">
+                <tr>
+                    <td class="mono muted" style="font-size: 11px;"
+                        th:text="${#temporals.format(e.timestamp, 'HH:mm:ss')}">--:--:--</td>
+                    <td>
+                        <span class="risk-badge"
+                              th:classappend="${e.level == 'ERROR' ? 'risk-high' : (e.level == 'WARN' ? 'risk-med' : 'risk-low')}"
+                              style="font-size: 10px; padding: 1px 6px;"
+                              th:text="${e.level}">LEVEL</span>
+                    </td>
+                    <td class="mono muted" style="font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 280px;"
+                        th:text="${e.logger}" th:title="${e.logger}">logger</td>
+                    <td class="mono" style="font-size: 12px; word-break: break-word;">
+                        <span th:text="${e.message}">message</span>
+                        <div th:if="${e.throwable != null}"
+                             style="color: var(--risk-high); font-size: 11px; margin-top: 4px;"
+                             th:text="${e.throwable}">throwable</div>
+                    </td>
+                </tr>
+            </th:block>
+            </tbody>
+        </table>
+    </div>
+</main>
+<div th:replace="~{fragments/header :: foot}"></div>
+</body>
+</html>

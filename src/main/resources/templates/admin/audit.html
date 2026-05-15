@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('Audit trail')}"></head>
+<body>
+<div th:replace="~{fragments/header :: topbar('admin')}"></div>
+<main>
+    <h1 class="page-title">Audit trail</h1>
+    <p class="page-subtitle">
+        Who reviewed what, when. Who deployed what, when. What ran, when, and why it stopped.
+    </p>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Review decisions</h2>
+            <span class="desc">last 50, newest first</span>
+        </div>
+        <table class="feed">
+            <thead>
+            <tr><th>Reviewed at</th><th>Pool</th><th>Reviewer</th><th>Label</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+            <tr th:if="${decisions.isEmpty()}">
+                <td colspan="5" class="empty">No review decisions yet.</td>
+            </tr>
+            <th:block th:unless="${decisions.isEmpty()}" th:each="d : ${decisions}">
+                <tr>
+                    <td class="mono muted" th:text="${#temporals.format(d.reviewedAt, 'yyyy-MM-dd HH:mm:ss')}">--</td>
+                    <td><a th:href="@{|/pool/${d.poolId}|}" th:text="|#${d.poolId}|">#0</a></td>
+                    <td class="muted" th:text="${d.reviewer}">reviewer</td>
+                    <td>
+                        <span class="risk-badge"
+                              th:classappend="${d.label == 'scam' ? 'risk-high' : (d.label == 'legitimate' ? 'risk-low' : 'risk-med')}"
+                              th:text="${d.label}">label</span>
+                    </td>
+                    <td class="muted" style="font-size: 12px;" th:text="${d.notes != null ? d.notes : '—'}">notes</td>
+                </tr>
+            </th:block>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Ingestion runs</h2>
+            <span class="desc">last 20</span>
+        </div>
+        <table class="feed">
+            <thead>
+            <tr><th>Run</th><th>Mode</th><th>Started</th><th>Ended</th><th>Pools</th><th>Status</th><th>Error</th></tr>
+            </thead>
+            <tbody>
+            <tr th:if="${runs.isEmpty()}">
+                <td colspan="7" class="empty">No ingestion runs yet.</td>
+            </tr>
+            <th:block th:unless="${runs.isEmpty()}" th:each="r : ${runs}">
+                <tr>
+                    <td class="mono" th:text="|#${r.id}|">#0</td>
+                    <td><span class="risk-badge"
+                              th:classappend="${r.mode == 'live' ? 'risk-low' : 'risk-med'}"
+                              th:text="${r.mode}">mode</span></td>
+                    <td class="mono muted" th:text="${#temporals.format(r.startedAt, 'yyyy-MM-dd HH:mm:ss')}">--</td>
+                    <td class="mono muted" th:text="${r.endedAt != null ? #temporals.format(r.endedAt, 'yyyy-MM-dd HH:mm:ss') : '—'}">--</td>
+                    <td class="numeric" th:text="${r.poolsDetected}">0</td>
+                    <td><span class="risk-badge"
+                              th:classappend="${r.status == 'completed' ? 'risk-low' : (r.status == 'running' ? 'risk-med' : 'risk-high')}"
+                              th:text="${r.status}">status</span></td>
+                    <td class="muted" style="font-size: 11px;" th:text="${r.errorMessage != null ? r.errorMessage : '—'}"
+                        th:title="${r.errorMessage}">—</td>
+                </tr>
+            </th:block>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>Deployer reputation leaderboard</h2>
+            <span class="desc">top 20 by scam confirmations</span>
+        </div>
+        <table class="feed">
+            <thead>
+            <tr><th>Address</th><th>Scam confirmations</th><th>Legit associations</th><th>First seen</th><th>Last updated</th></tr>
+            </thead>
+            <tbody>
+            <tr th:if="${topDeployers.isEmpty()}">
+                <td colspan="5" class="empty">No deployer reputation data yet. Submit some reviews to populate.</td>
+            </tr>
+            <th:block th:unless="${topDeployers.isEmpty()}" th:each="d : ${topDeployers}">
+                <tr>
+                    <td class="addr"><a th:href="|https://etherscan.io/address/${d.address}|" target="_blank" rel="noreferrer" th:text="${d.address}">0x0</a></td>
+                    <td>
+                        <span class="risk-badge risk-high" th:if="${d.scamConfirmations > 0}" th:text="${d.scamConfirmations}">0</span>
+                        <span class="muted" th:if="${d.scamConfirmations == 0}">—</span>
+                    </td>
+                    <td>
+                        <span class="risk-badge risk-low" th:if="${d.legitimateAssociations > 0}" th:text="${d.legitimateAssociations}">0</span>
+                        <span class="muted" th:if="${d.legitimateAssociations == 0}">—</span>
+                    </td>
+                    <td class="mono muted" th:text="${#temporals.format(d.firstSeen, 'yyyy-MM-dd')}">--</td>
+                    <td class="mono muted" th:text="${#temporals.format(d.lastUpdated, 'yyyy-MM-dd HH:mm')}">--</td>
+                </tr>
+            </th:block>
+            </tbody>
+        </table>
+    </div>
+</main>
+<div th:replace="~{fragments/header :: foot}"></div>
+</body>
+</html>

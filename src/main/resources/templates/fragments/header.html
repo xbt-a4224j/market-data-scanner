@@ -36,9 +36,15 @@
        th:classappend="${active == 'first_n_buyers' ? 'active' : ''}">First-N Buyers<span class="stub-badge">Stub</span></a>
     <a th:href="@{/heuristics/social_media_correlation}"
        th:classappend="${active == 'social_media_correlation' ? 'active' : ''}">Social Media<span class="stub-badge">Stub</span></a>
-    <a th:href="@{/admin/queue}"
-       th:classappend="${active == 'admin' ? 'active' : ''}"
-       style="margin-left: auto; color: var(--text-3);">Admin</a>
+    <span style="margin-left: auto; display: flex; gap: 0;">
+        <a th:href="@{/admin/queue}"
+           th:classappend="${active == 'admin' ? 'active' : ''}"
+           style="color: var(--text-3);">Queue</a>
+        <a th:href="@{/admin/runs}" style="color: var(--text-3);">Runs</a>
+        <a th:href="@{/admin/backfill}" style="color: var(--text-3);">Backfill</a>
+        <a th:href="@{/admin/audit}" style="color: var(--text-3);">Audit</a>
+        <a th:href="@{/admin/logs}" style="color: var(--text-3);">Logs</a>
+    </span>
 </nav>
 </body>
 <footer th:fragment="foot" class="foot">
