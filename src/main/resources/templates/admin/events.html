@@ -16,14 +16,14 @@
         <div class="stat">
             <div class="label">Errors (5m)</div>
             <div class="value" id="evt-stat-errors" style="color: var(--risk-high);">
-                <span th:text="${sparkline.![errors].sum()}">0</span>
+                <span th:text="${#aggregates.sum(sparkline.![errors])}">0</span>
             </div>
             <div class="sub">last five minutes</div>
         </div>
         <div class="stat">
             <div class="label">Warns (5m)</div>
             <div class="value" id="evt-stat-warns" style="color: var(--risk-med);">
-                <span th:text="${sparkline.![warns].sum()}">0</span>
+                <span th:text="${#aggregates.sum(sparkline.![warns])}">0</span>
             </div>
         </div>
         <div class="stat">
