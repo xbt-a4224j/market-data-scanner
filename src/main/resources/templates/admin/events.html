@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('Live events')}"></head>
+<body>
+<div th:replace="~{fragments/header :: topbar('admin')}"></div>
+<main>
+    <h1 class="page-title">Live event log</h1>
+    <p class="page-subtitle">
+        Streaming application events from the in-memory ring buffer.
+        Tail-follows the JVM root logger via SSE - new lines appear at the top
+        with a flash, oldest at the bottom. For a snapshot view with deeper
+        filtering, see <a th:href="@{/admin/logs}">Logs</a>.
+    </p>
+
+    <section class="stats">
+        <div class="stat">
+            <div class="label">Errors (5m)</div>
+            <div class="value" id="evt-stat-errors" style="color: var(--risk-high);">
+                <span th:text="${sparkline.![errors].sum()}">0</span>
+            </div>
+            <div class="sub">last five minutes</div>
+        </div>
+        <div class="stat">
+            <div class="label">Warns (5m)</div>
+            <div class="value" id="evt-stat-warns" style="color: var(--risk-med);">
+                <span th:text="${sparkline.![warns].sum()}">0</span>
+            </div>
+        </div>
+        <div class="stat">
+            <div class="label">Buffered total</div>
+            <div class="value" th:text="${summary.total}">0</div>
+            <div class="sub">of 5000 capacity</div>
+        </div>
+        <div class="stat" style="grid-column: span 1;">
+            <div class="label">Error rate (per min, last 5)</div>
+            <div style="height: 56px; padding: 4px 0;">
+                <canvas id="errorSparkline"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <div class="card">
+        <div class="card-header">
+            <h2>
+                Tail
+                <span id="evt-conn" class="evt-conn-blob" title="SSE status"></span>
+            </h2>
+            <span class="desc">newest first &middot; click a chip to filter</span>
+            <span class="right">
+                <span id="evt-rate" class="evt-rate-pill">0 / sec</span>
+            </span>
+        </div>
+        <div class="evt-filter-bar">
+            <span class="evt-filter-label">Show:</span>
+            <button type="button" class="evt-filter active" data-filter="ALL">All</button>
+            <button type="button" class="evt-filter" data-filter="INFO+">Info+</button>
+            <button type="button" class="evt-filter" data-filter="WARN+">Warn+</button>
+            <button type="button" class="evt-filter" data-filter="ERROR">Errors only</button>
+            <span style="flex: 1;"></span>
+            <label class="evt-pause-label">
+                <input type="checkbox" id="evt-pause"/> Pause stream
+            </label>
+        </div>
+        <table class="feed events" hx-ext="sse" hx-sse="connect:/admin/events/stream">
+            <thead>
+            <tr>
+                <th style="width: 92px;">Time</th>
+                <th style="width: 72px;">Level</th>
+                <th style="width: 220px;">Logger</th>
+                <th>Message</th>
+            </tr>
+            </thead>
+            <tbody id="evt-tbody"
+                   hx-sse="swap:event"
+                   hx-swap="afterbegin">
+            <tr th:if="${entries.isEmpty()}">
+                <td colspan="4" class="empty">
+                    <div class="lead">No events yet.</div>
+                    <div>Lines will appear here as the JVM emits them. Try triggering
+                        a backfill or hitting an admin endpoint.</div>
+                </td>
+            </tr>
+            <th:block th:unless="${entries.isEmpty()}" th:each="e : ${entries}">
+                <tr class="event-row"
+                    th:attr="data-level=${e.level}">
+                    <td class="event-time"
+                        th:text="${#temporals.format(e.timestamp, 'HH:mm:ss')}">--:--:--</td>
+                    <td>
+                        <span class="event-chip"
+                              th:classappend="${e.level == 'ERROR'} ? 'level-error' : (${e.level == 'WARN'} ? 'level-warn' : (${e.level == 'INFO'} ? 'level-info' : (${e.level == 'DEBUG'} ? 'level-debug' : 'level-trace')))"
+                              th:text="${e.level}">LEVEL</span>
+                    </td>
+                    <td class="event-logger"
+                        th:title="${e.logger}"
+                        th:text="${#strings.substringAfterLast(e.logger, '.')}">logger</td>
+                    <td class="event-message">
+                        <span th:text="${e.message}">message</span>
+                        <div th:if="${e.throwable != null}"
+                             class="event-throwable"
+                             th:text="${e.throwable}">throwable</div>
+                    </td>
+                </tr>
+            </th:block>
+            </tbody>
+        </table>
+    </div>
+</main>
+<div th:replace="~{fragments/header :: foot}"></div>
+
+<script th:inline="javascript">
+(function () {
+    /* SPARKLINE - per-minute error rate */
+    const spark = /*[[${sparkline}]]*/ [];
+    const labels = spark.map(b => b.minutesAgo === 0 ? 'now' : `-${b.minutesAgo}m`);
+    new Chart(document.getElementById('errorSparkline'), {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'errors', data: spark.map(b => b.errors),
+                  borderColor: '#b91c1c', backgroundColor: 'rgba(185,28,28,0.08)',
+                  fill: true, tension: 0.4, pointRadius: 2, borderWidth: 1.5 },
+                { label: 'warns', data: spark.map(b => b.warns),
+                  borderColor: '#b45309', backgroundColor: 'rgba(180,83,9,0.06)',
+                  fill: true, tension: 0.4, pointRadius: 2, borderWidth: 1.5 },
+            ],
+        },
+        options: {
+            maintainAspectRatio: false, responsive: true,
+            plugins: { legend: { display: false }, tooltip: { displayColors: false } },
+            scales: {
+                x: { display: false }, y: { display: false, beginAtZero: true },
+            },
+            elements: { line: { capBezierPoints: false } },
+        },
+    });
+
+    /* FILTER BAR - hide rows that don't match the active filter */
+    const tbody = document.getElementById('evt-tbody');
+    const buttons = document.querySelectorAll('.evt-filter');
+    let activeFilter = 'ALL';
+    function applyFilter() {
+        for (const row of tbody.querySelectorAll('tr.event-row')) {
+            const lvl = row.dataset.level;
+            let show = true;
+            if (activeFilter === 'INFO+')  show = (lvl === 'INFO' || lvl === 'WARN' || lvl === 'ERROR');
+            else if (activeFilter === 'WARN+')  show = (lvl === 'WARN' || lvl === 'ERROR');
+            else if (activeFilter === 'ERROR')  show = (lvl === 'ERROR');
+            row.style.display = show ? '' : 'none';
+        }
+    }
+    buttons.forEach(btn => btn.addEventListener('click', () => {
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeFilter = btn.dataset.filter;
+        applyFilter();
+    }));
+    /* Re-apply filter when htmx swaps in a new row */
+    document.body.addEventListener('htmx:sseMessage', () => {
+        applyFilter();
+        bumpRate();
+        capRows();
+    });
+
+    /* PAUSE - disconnect the SSE table when paused */
+    const pauseBox = document.getElementById('evt-pause');
+    const table = document.querySelector('table.events');
+    pauseBox.addEventListener('change', () => {
+        if (pauseBox.checked) {
+            htmx.trigger(table, 'htmx:abort');
+            table.removeAttribute('hx-sse');
+        } else {
+            table.setAttribute('hx-sse', 'connect:/admin/events/stream');
+            htmx.process(table);
+        }
+    });
+
+    /* CONNECTION BLOB */
+    const blob = document.getElementById('evt-conn');
+    document.body.addEventListener('htmx:sseOpen', () => blob.classList.add('on'));
+    document.body.addEventListener('htmx:sseError', () => blob.classList.remove('on'));
+    document.body.addEventListener('htmx:sseClose', () => blob.classList.remove('on'));
+
+    /* RATE PILL - rolling events-per-second over the last 5s */
+    const ratePill = document.getElementById('evt-rate');
+    const ticks = [];
+    function bumpRate() {
+        const now = Date.now();
+        ticks.push(now);
+        while (ticks.length && now - ticks[0] > 5000) ticks.shift();
+        ratePill.textContent = (ticks.length / 5).toFixed(1) + ' / sec';
+    }
+    setInterval(bumpRate, 1000);
+
+    /* Cap displayed rows to avoid runaway DOM growth */
+    function capRows() {
+        const rows = tbody.querySelectorAll('tr.event-row');
+        for (let i = 300; i < rows.length; i++) rows[i].remove();
+    }
+})();
+</script>
+</body>
+</html>

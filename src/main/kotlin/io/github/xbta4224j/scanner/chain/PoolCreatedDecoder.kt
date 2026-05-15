@@ -99,13 +99,10 @@ class PoolCreatedDecoder : EventDecoder<TokenContext> {
     companion object {
         const val UNISWAP_V3_FACTORY = "0x1F98431c8aD98523631AE4a59f267346ea31F984"
 
-        // Lowercased canonical mainnet addresses of tokens to exclude from "novel" detection.
-        val WELL_KNOWN_TOKENS: Set<String> = setOf(
-            "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",  // WETH
-            "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",  // USDC
-            "0xdac17f958d2ee523a2206206994597c13d831ec7",  // USDT
-            "0x6b175474e89094c44da98b954eedeac495271d0f",  // DAI
-        )
+        // The canonical "pair" tokens to exclude from "novel" detection.
+        // Sourced from `KnownTokens.SYMBOLS` so the symbol map and the
+        // novelty filter never drift apart.
+        val WELL_KNOWN_TOKENS: Set<String> get() = KnownTokens.WELL_KNOWN_ADDRESSES
 
         val EVENT: Event = Event(
             "PoolCreated",

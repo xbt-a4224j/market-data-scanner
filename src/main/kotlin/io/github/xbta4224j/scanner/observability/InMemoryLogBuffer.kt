@@ -22,7 +22,9 @@ import java.util.concurrent.atomic.AtomicLong
  * web3j, our own packages).
  */
 @Component
-class InMemoryLogBuffer {
+class InMemoryLogBuffer(
+    private val streamPublisher: LogStreamPublisher,
+) {
 
     data class Entry(
         val seq: Long,
@@ -58,12 +60,58 @@ class InMemoryLogBuffer {
                 )
                 buffer.addLast(entry)
                 while (buffer.size > CAPACITY) buffer.pollFirst()
+
+                // Tee to the live SSE stream for /admin/events. Wrap in a
+                // try/catch so a faulty subscriber can never break logging
+                // itself - the buffer remains authoritative on its own.
+                runCatching {
+                    streamPublisher.publish(LogStreamPublisher.Event(
+                        seq = entry.seq,
+                        timestamp = entry.timestamp.toString(),
+                        level = entry.level,
+                        logger = entry.logger,
+                        thread = entry.thread,
+                        message = entry.message,
+                        throwable = entry.throwable,
+                    ))
+                }
             }
         }
         appender.context = rootLogger.loggerContext
         appender.start()
         rootLogger.addAppender(appender)
     }
+
+    /**
+     * Per-minute ERROR + WARN counts over the last [minutes] minutes, oldest
+     * bucket first. Backs the sparkline on /admin/events. Empty minutes are
+     * returned as zeros so the chart's x-axis is continuous.
+     */
+    fun errorRateSparkline(minutes: Int = 5): List<MinuteBucket> {
+        val nowEpochMin = System.currentTimeMillis() / 60_000
+        val buckets = LongArray(minutes) { 0 }
+        val warns = LongArray(minutes) { 0 }
+        for (e in buffer) {
+            val mins = e.timestamp.toEpochSecond() / 60
+            val ago = (nowEpochMin - mins).toInt()
+            if (ago in 0 until minutes) {
+                val idx = (minutes - 1) - ago
+                when (e.level) {
+                    "ERROR" -> buckets[idx]++
+                    "WARN"  -> warns[idx]++
+                }
+            }
+        }
+        return (0 until minutes).map { i ->
+            MinuteBucket(
+                minutesAgo = (minutes - 1) - i,
+                errors = buckets[i],
+                warns = warns[i],
+            )
+        }
+    }
+
+    data class MinuteBucket(val minutesAgo: Int, val errors: Long, val warns: Long)
 
     /** Returns up to [limit] most-recent entries that match [minLevel] or higher, newest first. */
     fun recent(limit: Int = 200, minLevel: String? = null): List<Entry> {
