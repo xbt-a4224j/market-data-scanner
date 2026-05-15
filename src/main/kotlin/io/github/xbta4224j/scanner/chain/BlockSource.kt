@@ -13,7 +13,11 @@ import kotlinx.coroutines.flow.Flow
  * consumes either without knowing which it is - the same scoring, persistence,
  * and reorg handling apply to both modes.
  */
-sealed interface BlockSource {
+/**
+ * Not `sealed` so test fixtures (and future implementations like a websocket-
+ * replay source) can implement from outside the chain package.
+ */
+interface BlockSource {
     val mode: Mode
     fun subscribe(): Flow<TokenContext>
 

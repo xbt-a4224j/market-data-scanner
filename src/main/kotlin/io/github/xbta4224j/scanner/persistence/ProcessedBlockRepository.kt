@@ -31,7 +31,7 @@ interface ProcessedBlockRepository : JpaRepository<ProcessedBlock, ProcessedBloc
      * `clearAutomatically` evicts cached entities so subsequent finds reload
      * the fresh state instead of returning the stale canonical row.
      */
-    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Modifying(clearAutomatically = true)
     @Query(
         """
         UPDATE ProcessedBlock b

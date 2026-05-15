@@ -46,6 +46,20 @@ class WatermarkService(
         }
     }
 
+    /**
+     * Clear the watermark singleton back to its initial state (both pointers
+     * null). Intended for tests that share the database across cases.
+     */
+    @Transactional
+    fun reset() {
+        val state = current()
+        state.earliestProcessedBlock = null
+        state.latestProcessedBlock = null
+        state.latestProcessedBlockHash = null
+        state.lastUpdated = OffsetDateTime.now()
+        states.save(state)
+    }
+
     @Transactional
     fun extendBackward(blockNumber: Long) {
         val state = current()
