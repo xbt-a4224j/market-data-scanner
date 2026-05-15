@@ -1,6 +1,6 @@
 # Fly.io deployment config for market-data-scanner
 # After `fly launch` adjusts this, set secrets via:
-#   fly secrets set ETHEREUM_RPC_URL=... ETHERSCAN_API_KEY=... OPENAI_API_KEY=... ADMIN_PASSWORD=...
+#   fly secrets set ETHEREUM_RPC_URL=... ETHERSCAN_API_KEY=... ANTHROPIC_API_KEY=... ADMIN_PASSWORD=...
 # Provision Postgres separately:
 #   fly postgres create --name scanner-pg
 #   fly postgres attach scanner-pg

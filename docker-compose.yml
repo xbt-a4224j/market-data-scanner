@@ -7,7 +7,7 @@ services:
       POSTGRES_USER: scanner
       POSTGRES_PASSWORD: scanner
     ports:
-      - "5432:5432"
+      - "5433:5432"   # 5432 on host is reserved for other local projects; this repo lives on 5433
     volumes:
       - scanner_pgdata:/var/lib/postgresql/data
     healthcheck:

@@ -3,7 +3,7 @@ spring:
     name: market-data-scanner
 
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/scanner}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5433/scanner}
     username: ${DATABASE_USERNAME:scanner}
     password: ${DATABASE_PASSWORD:scanner}
 
@@ -21,16 +21,17 @@ spring:
     baseline-on-migrate: true
 
   ai:
-    openai:
-      api-key: ${OPENAI_API_KEY:}
-      embedding:
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:}
+      chat:
         options:
-          model: text-embedding-3-small        # 1536 dims, $0.02/1M tokens
-    vectorstore:
-      pgvector:
-        index-type: HNSW
-        distance-type: COSINE_DISTANCE
-        dimensions: 1536
+          model: claude-opus-4-7              # used by per-pool evidence summaries (Issue #11)
+          max-tokens: 800
+          temperature: 0.2
+    # pgvector store + embedding model intentionally absent until Issue #19 ships
+    # the corpus ingestion pipeline. The corpus_entries table exists (V2 migration)
+    # but stays empty; the metadata-similarity heuristic is a stub that returns a
+    # neutral 0-confidence result.
 
   cache:
     cache-names: deployer-history, etherscan-labels

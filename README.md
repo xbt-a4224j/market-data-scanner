@@ -13,7 +13,7 @@ docker-compose up -d
 # Set env vars (or put in a .env file)
 export ETHEREUM_RPC_URL="wss://eth-mainnet.g.alchemy.com/v2/<your-key>"
 export ETHERSCAN_API_KEY="<your-key>"
-export OPENAI_API_KEY="<your-key>"
+export ANTHROPIC_API_KEY="<your-key>"            # used by Issue #11 admin/corpus + evidence summaries
 export ADMIN_USERNAME="admin"
 export ADMIN_PASSWORD="<set-something-real>"
 

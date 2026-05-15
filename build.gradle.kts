@@ -17,7 +17,7 @@ repositories {
     mavenCentral()
 }
 
-extra["springAiVersion"] = "1.0.0-M1"
+extra["springAiVersion"] = "1.0.0"
 extra["web3jVersion"] = "4.12.0"
 extra["resilience4jVersion"] = "2.2.0"
 
@@ -37,18 +37,22 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.8.0")
 
-    // Spring AI — embedding-based heuristics
-    implementation("org.springframework.ai:spring-ai-openai-spring-boot-starter")
-    implementation("org.springframework.ai:spring-ai-pgvector-store-spring-boot-starter")
+    // Spring AI - Anthropic chat (used in #11 admin/corpus + per-pool evidence summaries).
+    // Wired via the BOM imported below. The pgvector starter and embedding model are
+    // intentionally not pulled in here: the metadata-similarity heuristic stays stubbed
+    // until Issue #19 ships proper corpus ingestion. Until then the corpus_entries table
+    // exists empty and no embedding bean is required.
+    implementation("org.springframework.ai:spring-ai-starter-model-anthropic")
 
-    // Web3 / Ethereum
+    // Web3 / Ethereum - core only; Web3j Spring Boot starter is no longer published,
+    // wire Web3j and WebSocketService manually in config/Web3Config.kt (Issue #3).
     implementation("org.web3j:core:${property("web3jVersion")}")
-    implementation("org.web3j:spring-boot-starter:${property("web3jVersion")}")
 
     // Database
     runtimeOnly("org.postgresql:postgresql")
-    implementation("org.flywaydb:flyway-core")
-    runtimeOnly("org.flywaydb:flyway-database-postgresql")
+    implementation("org.flywaydb:flyway-core")  // Postgres support is bundled in Flyway 9.x; the
+                                                // separate flyway-database-postgresql artifact only
+                                                // becomes required at Flyway 10+.
 
     // Resilience — retry, circuit breaker for RPC
     implementation("io.github.resilience4j:resilience4j-spring-boot3:${property("resilience4jVersion")}")
