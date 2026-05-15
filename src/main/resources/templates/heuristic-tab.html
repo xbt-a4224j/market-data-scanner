@@ -60,7 +60,7 @@
                     <td class="addr">
                         <a th:href="@{|/pool/${row.pool.id}|}"
                            th:title="${row.pool.tokenAddress}"
-                           th:text="${T(io.github.xbta4224j.scanner.api.PoolDetectionDto).shortAddress(row.pool.tokenAddress)}">0x0..0</a>
+                           th:text="${row.pool.shortTokenAddress}">0x0..0</a>
                     </td>
                     <td>
                         <span class="risk-badge"

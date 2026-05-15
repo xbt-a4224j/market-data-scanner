@@ -68,7 +68,7 @@
                     <dt>Paired with</dt>
                     <dd class="addr"><a th:href="|https://etherscan.io/token/${p.pairedWithAddress}|" target="_blank" rel="noreferrer" th:text="${p.pairedWithAddress}">0x0</a></dd>
                     <dt>Tx hash</dt>
-                    <dd class="addr"><a th:href="|https://etherscan.io/tx/${p.txHash}|" target="_blank" rel="noreferrer" th:text="${T(io.github.xbta4224j.scanner.api.PoolDetectionDto).shortAddress(p.txHash)}">0x0</a></dd>
+                    <dd class="addr"><a th:href="|https://etherscan.io/tx/${p.txHash}|" target="_blank" rel="noreferrer" th:text="${p.shortTxHash}">0x0</a></dd>
                     <dt>Block</dt>
                     <dd class="mono" th:text="${p.blockNumber}">0</dd>
                     <dt>Fee tier</dt>

@@ -1,14 +1,16 @@
 package io.github.xbta4224j.scanner.api
 
 import io.github.xbta4224j.scanner.persistence.PoolDetection
-import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
 /**
  * UI-facing flattening of [PoolDetection] for SSE + JSON detail endpoints.
- * Strips the heuristic_results JSONB blob in favor of a per-heuristic
- * score + confidence summary the dashboard renders inline; the full
- * evidence map is fetched by the per-pool detail page on demand.
+ *
+ * Display-friendly derived fields (shortened addresses, risk band, formatted
+ * timestamp) are computed once in [from] and exposed as plain instance fields,
+ * so Thymeleaf templates can render `${pool.shortTokenAddress}` without
+ * having to invoke static helpers via SpEL `T(...)` (which has Kotlin
+ * companion-object interop quirks and is brittle in general).
  */
 data class PoolDetectionDto(
     val id: Long,
@@ -26,6 +28,12 @@ data class PoolDetectionDto(
     val riskBand: String,
     val flaggedSignals: List<String>,
     val heuristicVersions: Map<String, String>,
+    // Display-only short forms of the addresses + tx hash. Computed at
+    // construction so templates do not need to call any helpers.
+    val shortTokenAddress: String,
+    val shortDeployerAddress: String,
+    val shortPairedWithAddress: String,
+    val shortTxHash: String,
 ) {
     companion object {
         fun from(pd: PoolDetection): PoolDetectionDto = PoolDetectionDto(
@@ -44,17 +52,21 @@ data class PoolDetectionDto(
             riskBand = riskBand(pd.compositeScore),
             flaggedSignals = pd.flaggedSignals,
             heuristicVersions = pd.heuristicVersions,
+            shortTokenAddress = shortAddress(pd.tokenAddress),
+            shortDeployerAddress = shortAddress(pd.deployerAddress),
+            shortPairedWithAddress = shortAddress(pd.pairedWith),
+            shortTxHash = shortAddress(pd.txHash),
         )
 
-        @JvmStatic
-        fun riskBand(score: Int): String = when {
+        private fun riskBand(score: Int): String = when {
             score >= 70 -> "high"
             score >= 40 -> "medium"
             else -> "low"
         }
 
-        @JvmStatic
-        fun shortAddress(address: String): String =
-            if (address.length >= 10) "${address.take(6)}..${address.takeLast(4)}" else address
+        private fun shortAddress(address: String): String =
+            if (address.isBlank()) "—"
+            else if (address.length >= 10) "${address.take(6)}..${address.takeLast(4)}"
+            else address
     }
 }
