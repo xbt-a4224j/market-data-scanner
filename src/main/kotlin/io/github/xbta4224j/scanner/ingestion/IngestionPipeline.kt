@@ -3,6 +3,7 @@ package io.github.xbta4224j.scanner.ingestion
 import io.github.xbta4224j.scanner.analysis.CompositeScorer
 import io.github.xbta4224j.scanner.api.PoolDetectionDto
 import io.github.xbta4224j.scanner.api.PoolStreamPublisher
+import io.github.xbta4224j.scanner.observability.MetricsRegistry
 import io.github.xbta4224j.scanner.chain.BlockSource
 import io.github.xbta4224j.scanner.chain.TokenContext
 import io.github.xbta4224j.scanner.persistence.IngestionRun
@@ -40,6 +41,7 @@ class IngestionPipeline(
     private val ingestionRuns: IngestionRunRepository,
     private val watermark: WatermarkService,
     private val streamPublisher: PoolStreamPublisher,
+    private val metrics: MetricsRegistry,
     txManager: PlatformTransactionManager,
 ) {
 
@@ -167,8 +169,17 @@ class IngestionPipeline(
             saved
         }
 
-        // Push to the live SSE feed for any subscribers
+        // Metrics + SSE
         if (saved != null) {
+            metrics.poolsDetectedTotal.increment()
+            composite.results.forEach { r ->
+                val outcome = when {
+                    r.confidence == 0.0 -> MetricsRegistry.HeuristicOutcome.DEGRADED
+                    r.score >= 0.7      -> MetricsRegistry.HeuristicOutcome.FLAGGED
+                    else                -> MetricsRegistry.HeuristicOutcome.CLEAN
+                }
+                metrics.markHeuristicFired(r.heuristicName, outcome)
+            }
             streamPublisher.publish(PoolDetectionDto.from(saved))
         }
 
