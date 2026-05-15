@@ -1,10 +1,10 @@
-# GitHub Issues — Market Data Scanner
+# GitHub Issues - Market Data Scanner
 
-Day-by-day ticket breakdown. Each issue is scoped to ~1-6h. Dependencies noted. Bulk-create via `gh issue create` once the repo is set up.
+Phase-by-phase issue breakdown. Each issue is scoped to ~1-6h. Dependencies noted. Bulk-create via `gh issue create` once the repo is set up.
 
 ---
 
-## SATURDAY (~10h)
+## PHASE 1 - foundation
 
 ### Issue #1: Project scaffold + Postgres dev environment
 
@@ -108,7 +108,7 @@ Walk `Transfer` events from the new token contract. Compute top-K holder distrib
 
 ---
 
-## SUNDAY (~10h)
+## PHASE 2 - heuristics + ingestion
 
 ### Issue #6: LpLockHeuristic — IMPLEMENTED
 
@@ -173,7 +173,7 @@ The shared `IngestionPipeline` that consumes any `BlockSource` and writes to per
 
 ---
 
-## MONDAY EVENING (~4h)
+## PHASE 3 - dashboard surface
 
 ### Issue #9: SSE endpoint + Overview tab
 
@@ -212,7 +212,7 @@ Eight tabs total — three implemented heuristics get detail views, five stubbed
 
 ---
 
-## TUESDAY EVENING (~5h)
+## PHASE 4 - admin panel
 
 ### Issue #11: Admin panel — review queue + corpus auto-add
 
@@ -254,7 +254,7 @@ Manual backfill trigger via the admin panel. Three modes: date range, block rang
 
 ---
 
-## WEDNESDAY EVENING (~4h)
+## PHASE 5 - hardening
 
 ### Issue #13: Spring Security basic auth
 
@@ -315,7 +315,7 @@ Run `./gradlew test` on every push to a PR. Required status check before merge.
 
 ---
 
-## WEDNESDAY EVENING (continued)
+## PHASE 5 (continued)
 
 ### Issue #16: Observability — Prometheus metrics + structured logging
 
@@ -339,7 +339,7 @@ Custom Micrometer metrics for the heuristics + pipeline. Logback JSON output for
 
 ---
 
-## THURSDAY MORNING (~2h)
+## PHASE 6 - deploy
 
 ### Issue #17: Deploy to Fly.io
 
@@ -362,12 +362,12 @@ Deploy the service to Fly.io. Provision managed Postgres with pgvector. Configur
 
 ---
 
-### Issue #18: Pre-Thursday-noon smoke test
+### Issue #18: Pre-deploy smoke test
 
 **Labels:** `qa`, `priority:1`
 
 **Description:**
-Final end-to-end test. Walk through the demo as (scrubbed) would experience it. Fix any visible bugs. **Lock the code after this issue completes — no further commits before Friday.**
+Final end-to-end test of the deployed system. Walk through every surface and fix any visible bugs.
 
 **Acceptance criteria:**
 - [ ] Dashboard loads cleanly at the deployed URL
@@ -379,7 +379,7 @@ Final end-to-end test. Walk through the demo as (scrubbed) would experience it. 
 - [ ] Per-heuristic detail page (click into a row) renders evidence correctly
 - [ ] Prometheus endpoint at `/actuator/prometheus` returns counters
 - [ ] Run `./gradlew test` once more locally — all green
-- [ ] After this issue closes, **no commits until Saturday** (post-(scrubbed) call)
+- [ ] All surfaces verified end-to-end against the deployed instance
 
 **Estimate:** 1h
 **Depends on:** #17
@@ -414,7 +414,7 @@ Then create each issue from this file with `gh issue create --title "..." --body
 
 ---
 
-## FUTURE / POST-INTERVIEW WORK (not part of the 32h sprint)
+## FUTURE WORK
 
 ### Issue #19: Corpus Ingestion Pipeline — legitimate token + deployer ground truth
 
@@ -429,7 +429,7 @@ The metadata-similarity heuristic remains stubbed until this issue ships. The co
 - [ ] Pipeline ingests legitimate-token records from authoritative sources:
   - CoinGecko top-N tokens by market cap (their API has a JSON listing endpoint)
   - Etherscan's labeled-contracts dataset (canonical token addresses with verified-source status)
-  - the operator's internal labeled-legitimate list (when accessible) — Sanctioned Entities Network is the reverse, but they likely have a positive-label set too
+  - Any internal labeled-legitimate set you may have access to (some attribution-data vendors publish positive-label lists alongside their sanctioned-entity lists)
 - [ ] For each candidate token, verify on-chain:
   - The contract address has code (is a contract, not an EOA)
   - The `symbol()` / `name()` calls return values matching the source
@@ -440,13 +440,10 @@ The metadata-similarity heuristic remains stubbed until this issue ships. The co
 - [ ] Admin-panel "Mark Legitimate" actions feed into the same table with `source='admin_review'` to differentiate from `source='coingecko_top_500'` etc.
 - [ ] Manual override list for tokens that need to be in the corpus but aren't auto-discoverable (USDM1 once it's live, federal-issued tokens, etc.)
 
-**Estimate:** 8-12h depending on how many sources you wire up. Post-interview work.
+**Estimate:** 8-12h depending on how many sources you wire up. Future work.
 
 **Notes:**
 The temptation to seed a small CSV at startup is real but creates fake confidence — a corpus that says "USDC's deployer is 0xabc" when 0xabc is wrong silently breaks impersonation detection. Better to keep the heuristic stubbed and the corpus empty until the proper ingestion pipeline lands than to ship a corpus you can't defend the contents of. This is the discipline that separates real attribution work from vibes.
 
 ---
 
-## The Thursday lock — restating
-
-**Code is locked Thursday noon.** After Issue #18 closes, no commits until Saturday (post-(scrubbed) call). This rule exists because the biggest predictor of how Friday goes is whether Alex walks in rested. Don't break it.
