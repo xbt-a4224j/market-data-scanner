@@ -210,11 +210,35 @@ table.feed tbody tr {
 }
 table.feed tbody tr:hover { background: var(--surface-2); }
 table.feed tbody tr.fresh {
-  animation: fresh-fade 1.6s ease-out;
+  position: relative;
+  animation: fresh-flash 2.2s ease-out;
+  box-shadow: inset 3px 0 0 0 #facc15;
 }
-@keyframes fresh-fade {
-  0%   { background: #fef9c3; }
-  100% { background: transparent; }
+table.feed tbody tr.fresh::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(252, 211, 77, 0.0) 35%,
+      rgba(254, 240, 138, 0.65) 50%,
+      rgba(252, 211, 77, 0.0) 65%,
+      transparent 100%
+  );
+  background-size: 220% 100%;
+  background-position: -120% 0;
+  animation: fresh-shine 1.4s ease-out;
+}
+@keyframes fresh-flash {
+  0%   { background: linear-gradient(90deg, #fde68a 0%, #fef9c3 70%, transparent 100%); }
+  35%  { background: linear-gradient(90deg, #fef3c7 0%, #fefce8 70%, transparent 100%); }
+  100% { background: transparent; box-shadow: inset 3px 0 0 0 transparent; }
+}
+@keyframes fresh-shine {
+  from { background-position: -120% 0; opacity: 1; }
+  to   { background-position:  220% 0; opacity: 0; }
 }
 .mono { font-family: var(--mono); font-size: 12px; }
 .addr { font-family: var(--mono); font-size: 12px; color: var(--text-2); }

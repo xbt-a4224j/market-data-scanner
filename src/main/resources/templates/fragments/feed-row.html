@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <body>
-<tr th:fragment="row(pool)">
+<tr th:fragment="row(pool)"
+    th:class="${rowClass != null} ? ${rowClass} : ''">
     <td class="mono muted" th:text="${pool.detectedAtTime}">--:--:--</td>
     <td class="numeric" th:text="${pool.blockNumber}">0</td>
     <td class="addr">
