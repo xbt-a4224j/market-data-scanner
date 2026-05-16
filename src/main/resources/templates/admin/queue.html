@@ -67,11 +67,16 @@
                     <td class="addr">
                         <a th:href="@{|/pool/${p.id}|}"
                            th:title="${p.tokenAddress}"
-                           th:text="${T(io.github.xbta4224j.scanner.api.PoolDetectionDto).shortAddress(p.tokenAddress)}">0x0..0</a>
+                           th:text="${p.shortTokenAddress}">0x0..0</a>
                     </td>
-                    <td class="addr muted"
-                        th:title="${p.deployerAddress}"
-                        th:text="${p.deployerAddress != '' ? T(io.github.xbta4224j.scanner.api.PoolDetectionDto).shortAddress(p.deployerAddress) : '—'}">0x0..0</td>
+                    <td class="addr muted">
+                        <a th:if="${p.deployerAddress != ''}"
+                           th:href="|https://etherscan.io/address/${p.deployerAddress}|"
+                           target="_blank" rel="noreferrer"
+                           th:title="${p.deployerAddress}"
+                           th:text="${p.shortDeployerAddress}">0x0..0</a>
+                        <span th:unless="${p.deployerAddress != ''}" class="muted">&mdash;</span>
+                    </td>
                     <td>
                         <span class="risk-badge risk-high" th:text="${p.compositeScore}">0</span>
                     </td>

@@ -27,20 +27,20 @@ abstractions extracted to keep each layer open for extension.
 
 ## Decision
 
-The packages line up to Allium's layers as follows. **No package renames** —
-the existing `chain/`, `ingestion/`, `persistence/`, `analysis/`, `api/`,
-`admin/`, `corpus/` packages each map to one (or in two cases, a contiguous
-pair) of Allium's layers. Cross-cutting concerns (`config/`, `observability/`)
-sit beside the pipeline, not in it.
+Each layer is one package. Names match the Allium model so a reviewer
+landing in `src/main/kotlin/io/github/xbta4224j/scanner/` sees the
+canonical pipeline at a glance — no mapping required. Cross-cutting
+concerns (`config/`, `observability/`) sit beside the pipeline, not in
+it.
 
-| Allium layer | Role | Our packages | Key types | Library |
+| Allium layer | Role | Package | Key types | Library |
 |---|---|---|---|---|
-| 1. Data Ingestion (Node Infra) | Subscribe / pull blocks + logs from RPC | `chain/` (sources) + `ingestion/` (orchestration) | `BlockSource` (sealed contract), `LiveBlockSource` (WSS), `BackfillBlockSource` (getLogs), `IngestionPipeline` | web3j 4.12 (HTTP + WebSocket transports) |
-| 2. Normalization & Decoding | ABI-decode raw logs into typed events | `chain/` (decoders) | `EventDecoder<T>` (extracted in this ADR), `PoolCreatedDecoder : EventDecoder<TokenContext>`, `MintLogReader`, `TransferLogReader`, `NpmPositionTracer` | web3j ABI codec (`Event`, `EventEncoder`, `FunctionReturnDecoder`) |
-| 3. Indexing | Organise normalised events into queryable tables with the right keys + indexes | `persistence/` (entities + repositories) | `PoolDetection`, `ProcessedBlock` (compound PK `(block_number, block_hash)`), `IngestionRun`, `DeployerReputation`, `CorpusEntryDao` | Spring Data JPA + Hibernate; Flyway-versioned schema (`V4__indexes.sql` adds the analytical-query indexes) |
-| 4. Storage & Warehouse | The actual persistent store + enrichment writes | Postgres + pgvector container; `corpus/` (embedding enrichment) | `CorpusIngestionService`, `corpus_entries.embedding vector(1536)` | Postgres 16 + pgvector; Spring AI `EmbeddingModel` (OpenAI text-embedding-3-small) |
-| 5. Query & Analytics | SQL / API surface that turns indexed data into per-detection insights | `analysis/` (heuristic queries) + `api/` (read controllers) | `RiskHeuristic` interface, `CompositeScorer` (parallel `async`/`awaitAll`), `ChartsApiController`, `StatsService`, `EvidenceSummaryService` | JPA criteria + JdbcTemplate for vector ops; Spring AI `ChatModel` (Anthropic) for natural-language evidence summaries |
-| 6. Application & Insight | Operator-facing dashboards, monitoring, decisions | `api/` (UI controllers), `admin/`, `templates/`, `static/` | `DashboardController`, `HeuristicTabsController`, `PoolStreamController` (SSE), `AdminController`, `ReviewService`, `LogsController` | Spring Web MVC + Thymeleaf + htmx + Reactor `Sinks.Many` for SSE; Chart.js for in-page charts |
+| 1. Data Ingestion (Node Infra) | Subscribe / pull blocks + logs from RPC | `ingestion/` | `BlockSource`, `LiveBlockSource` (WSS), `BackfillBlockSource` (getLogs), `IngestionPipeline`, `EtherscanClient`, `PriceOracle`, `WatermarkService` | web3j 4.12 (HTTP + WebSocket transports), Spring `RestClient` for external HTTP |
+| 2. Normalization & Decoding | ABI-decode raw logs into typed events | `decoding/` | `EventDecoder<T>` interface, `PoolCreatedDecoder : EventDecoder<TokenContext>`, `MintLogReader`, `TransferLogReader`, `NpmPositionTracer`, `LockContracts`, `KnownTokens`, `TokenContext` | web3j ABI codec (`Event`, `EventEncoder`, `FunctionReturnDecoder`) |
+| 3. Indexing | Organise normalised events into queryable tables with the right keys + indexes | `indexing/` | `PoolDetection`, `ProcessedBlock` (compound PK `(block_number, block_hash)`), `IngestionRun`, `DeployerReputation`, `CorpusEntryDao`, `ReviewDecision` | Spring Data JPA + Hibernate; Flyway-versioned schema (`V4__indexes.sql` adds the analytical-query indexes) |
+| 4. Storage & Warehouse | The persistent store + enrichment writes | `warehouse/` | `CorpusIngestionService`, `corpus_entries.embedding vector(1536)` | Postgres 16 + pgvector; Spring AI `EmbeddingModel` (OpenAI text-embedding-3-small) |
+| 5. Query & Analytics | Per-detection insights derived from indexed + warehoused data | `query/` + `query/heuristics/` | `RiskHeuristic` interface, `CompositeScorer` (parallel `async`/`awaitAll`), `HeuristicResult`, the eight heuristic implementations | Kotlin coroutines for parallel scoring; JPA criteria + JdbcTemplate for vector ops |
+| 6. Application & Insight | Operator-facing dashboards, monitoring, decisions | `application/` + `application/admin/` | `DashboardController`, `HeuristicTabsController`, `PoolStreamController` (SSE), `ChartsApiController`, `EvidenceFormatter`, `EvidenceSummaryService`, `StatsService`, `AdminController`, `ReviewService`, `LogsController`, `EventsController` | Spring Web MVC + Thymeleaf + htmx + Reactor `Sinks.Many` for SSE; Chart.js for in-page charts; Spring AI `ChatModel` (Anthropic) for natural-language evidence summaries |
 
 **Cross-cutting (not in any layer):**
 - `observability/`: Micrometer + Prometheus + Logback JSON + an in-memory ring buffer for the live event-log tab.
@@ -79,24 +79,19 @@ sit beside the pipeline, not in it.
 
 ### Negative
 
-- The `chain/` package straddles L1 (sources) and L2 (decoders). The split is
-  obvious from class names (`*BlockSource` vs `*Decoder` / `*Reader`) but a
-  future contributor might want to break `chain/` into `chain/sources/` +
-  `chain/decoding/` subpackages. Deferred — package surgery for cosmetic
-  reasons is exactly the kind of churn this ADR is trying to head off.
-- The `analysis/` package contains both the heuristic *contract* (L5: pure
-  query) and the heuristic *queries that enrich raw on-chain reads* (some
-  heuristics blur into L2/L4 because they call `eth_getLogs` themselves). This
-  is intentional — splitting "fetch + decode" out of each heuristic into a
-  separate enrichment-step abstraction would be premature now (we have 3 real
-  heuristics; the right shared abstraction emerges around heuristic 5+).
+- The `query/` package contains both the heuristic *contract* (pure query
+  over indexed data) and the heuristic *queries that enrich raw on-chain
+  reads* (some heuristics blur into L1/L2 because they call `eth_getLogs`
+  themselves). This is intentional — splitting "fetch + decode" out of
+  each heuristic into a separate enrichment-step abstraction would be
+  premature now (we have 3 real heuristics; the right shared abstraction
+  emerges around heuristic 5+).
+- The rename was a one-shot churn — git history for the moved files traces
+  through `git log --follow`, and the import sweep was mechanical. Worth
+  paying once for a permanent gain in legibility.
 
 ### Rejected alternatives
 
-- **Rename packages to `nodes/`, `decoding/`, `indexing/`, `warehouse/`,
-  `query/`, `application/`.** Rejected: high import churn for purely cosmetic
-  alignment. The mapping table above is the durable artefact; package names
-  follow standard JVM ergonomics.
 - **Introduce an explicit `EnrichmentStep` interface for `EtherscanClient` /
   `PriceOracle` / `MintLogReader`.** Rejected as premature. Each enricher is
   used by exactly one heuristic today; the abstraction would be speculative.

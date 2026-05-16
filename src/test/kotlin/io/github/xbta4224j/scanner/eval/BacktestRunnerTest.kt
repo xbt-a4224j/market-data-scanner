@@ -1,10 +1,10 @@
 package io.github.xbta4224j.scanner.eval
 
-import io.github.xbta4224j.scanner.analysis.CompositeScorer
-import io.github.xbta4224j.scanner.analysis.HeuristicResult
-import io.github.xbta4224j.scanner.analysis.HeuristicsConfig
-import io.github.xbta4224j.scanner.analysis.RiskHeuristic
-import io.github.xbta4224j.scanner.chain.TokenContext
+import io.github.xbta4224j.scanner.query.CompositeScorer
+import io.github.xbta4224j.scanner.query.HeuristicResult
+import io.github.xbta4224j.scanner.query.HeuristicsConfig
+import io.github.xbta4224j.scanner.query.RiskHeuristic
+import io.github.xbta4224j.scanner.decoding.TokenContext
 import kotlinx.coroutines.test.runTest
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test

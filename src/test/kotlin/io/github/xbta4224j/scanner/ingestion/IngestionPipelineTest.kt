@@ -1,13 +1,13 @@
 package io.github.xbta4224j.scanner.ingestion
 
-import io.github.xbta4224j.scanner.chain.BlockSource
-import io.github.xbta4224j.scanner.chain.TokenContext
-import io.github.xbta4224j.scanner.persistence.IngestionRunRepository
-import io.github.xbta4224j.scanner.persistence.PoolDetectionRepository
-import io.github.xbta4224j.scanner.persistence.PoolDetectionStatus
-import io.github.xbta4224j.scanner.persistence.ProcessedBlockId
-import io.github.xbta4224j.scanner.persistence.ProcessedBlockRepository
-import io.github.xbta4224j.scanner.persistence.ProcessedBlockStatus
+import io.github.xbta4224j.scanner.ingestion.BlockSource
+import io.github.xbta4224j.scanner.decoding.TokenContext
+import io.github.xbta4224j.scanner.indexing.IngestionRunRepository
+import io.github.xbta4224j.scanner.indexing.PoolDetectionRepository
+import io.github.xbta4224j.scanner.indexing.PoolDetectionStatus
+import io.github.xbta4224j.scanner.indexing.ProcessedBlockId
+import io.github.xbta4224j.scanner.indexing.ProcessedBlockRepository
+import io.github.xbta4224j.scanner.indexing.ProcessedBlockStatus
 import io.github.xbta4224j.scanner.support.PostgresIntegrationTest
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

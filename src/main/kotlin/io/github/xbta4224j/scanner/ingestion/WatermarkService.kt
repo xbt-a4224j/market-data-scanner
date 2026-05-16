@@ -1,7 +1,7 @@
 package io.github.xbta4224j.scanner.ingestion
 
-import io.github.xbta4224j.scanner.persistence.IngestionState
-import io.github.xbta4224j.scanner.persistence.IngestionStateRepository
+import io.github.xbta4224j.scanner.indexing.IngestionState
+import io.github.xbta4224j.scanner.indexing.IngestionStateRepository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.OffsetDateTime

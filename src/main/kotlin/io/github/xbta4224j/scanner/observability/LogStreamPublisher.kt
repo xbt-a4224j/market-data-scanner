@@ -14,7 +14,7 @@ import reactor.core.publisher.Sinks
  * any backlog from the buffer's snapshot first, then connects to the
  * stream for tail-following.
  *
- * Mirrors the shape of [io.github.xbta4224j.scanner.api.PoolStreamPublisher]
+ * Mirrors the shape of [io.github.xbta4224j.scanner.application.PoolStreamPublisher]
  * deliberately: the canonical pipeline (ADR-006) has one Layer-6 SSE
  * pattern and both the pool feed and the event log are instances of it.
  */
