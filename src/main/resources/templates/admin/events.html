@@ -92,7 +92,7 @@
                     </td>
                     <td class="event-logger"
                         th:title="${e.logger}"
-                        th:text="${#strings.substringAfterLast(e.logger, '.')}">logger</td>
+                        th:text="${e.loggerShort}">logger</td>
                     <td class="event-message">
                         <span th:text="${e.message}">message</span>
                         <div th:if="${e.throwable != null}"

@@ -35,7 +35,13 @@ class InMemoryLogBuffer(
         val message: String,
         val mdc: Map<String, String>,
         val throwable: String?,
-    )
+    ) {
+        // Last segment of a dotted logger name (e.g. "...LiveBlockSource").
+        // Computed here so templates can render `${e.loggerShort}` without
+        // calling Thymeleaf's #strings utility, whose `substringAfterLast`
+        // is not available in every Spring Boot 3.x line.
+        val loggerShort: String get() = logger.substringAfterLast('.')
+    }
 
     private val buffer = ConcurrentLinkedDeque<Entry>()
     private val seqGen = AtomicLong(0)
