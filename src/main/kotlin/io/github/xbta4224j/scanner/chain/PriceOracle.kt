@@ -56,7 +56,7 @@ class PriceOracle(
     fun valueLpSide(tokenAddress: String, amount: BigInteger): BigDecimal? =
         valueInUsd(tokenAddress, amount)
 
-    @Cacheable("etherscan-labels", key = "'eth-spot-usd'")
+    @Cacheable("coingecko-spot", key = "'eth-spot-usd'")
     fun ethPriceUsd(): BigDecimal? {
         return runCatching {
             val body = rest.get()

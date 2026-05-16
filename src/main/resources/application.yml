@@ -40,10 +40,10 @@ spring:
         options:
           model: gpt-4o-mini
 
+  # Cache topology lives in CacheConfig.kt - per-cache TTLs (30m default for
+  # slow-changing labels / prices) instead of one blanket spec.
   cache:
-    cache-names: deployer-history, etherscan-labels
-    caffeine:
-      spec: maximumSize=10000,expireAfterWrite=5m
+    type: caffeine
 
   thymeleaf:
     cache: false                   # disable in dev; enable in fly.toml for prod

@@ -63,6 +63,11 @@ class CorpusIngestionService(
 
         for (c in candidates) {
             try {
+                // Etherscan free tier: 5 calls / sec. The cached version of
+                // getContractCreation is fast on a re-run; on a cold corpus
+                // ingest, the natural pacing keeps us comfortably under the
+                // limit and avoids the 1-minute lockout if we burst.
+                Thread.sleep(THROTTLE_MS)
                 val creation = etherscan.getContractCreation(c.address)
                 if (creation == null) {
                     log.debug("  no creation tx for {}, skipping", c.address)
@@ -105,6 +110,13 @@ class CorpusIngestionService(
 
     private data class Candidate(val address: String, val symbol: String, val name: String, val rank: Int)
     private data class Market(val id: String, val symbol: String, val name: String, val rank: Int)
+
+    private companion object {
+        // ~4 req/s, well under Etherscan's 5/s free-tier limit and CoinGecko's
+        // ~30/min public-tier limit (corpus ingest only hits CoinGecko twice
+        // per run; the loop body is the Etherscan-heavy path).
+        const val THROTTLE_MS = 250L
+    }
 
     private fun fetchTopMarkets(limit: Int): List<Market> {
         val capped = minOf(limit, 250)

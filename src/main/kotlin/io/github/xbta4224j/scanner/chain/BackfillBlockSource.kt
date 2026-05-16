@@ -36,6 +36,10 @@ class BackfillBlockSource(
 
     override val mode: BlockSource.Mode = BlockSource.Mode.BACKFILL
 
+    private companion object {
+        const val THROTTLE_MS = 250L
+    }
+
     override fun subscribe(): Flow<TokenContext> = flow {
         require(fromBlock <= toBlock) { "fromBlock $fromBlock > toBlock $toBlock" }
         log.info("backfill starting: blocks {}..{} chunkSize={}", fromBlock, toBlock, chunkSize)
@@ -50,6 +54,10 @@ class BackfillBlockSource(
                 PoolCreatedDecoder.UNISWAP_V3_FACTORY,
             ).addSingleTopic(PoolCreatedDecoder.POOL_CREATED_TOPIC)
 
+            // Inter-chunk pacing keeps Infura's per-second compute-units cap
+            // out of trouble; each eth_getLogs over a 1k-block window is
+            // ~26 CU, and the free tier allows 500 CU/s.
+            Thread.sleep(THROTTLE_MS)
             val logs = runCatching { web3j.ethGetLogs(filter).send().logs }
                 .onFailure { log.warn("eth_getLogs failed for {}..{}: {}", cursor, end, it.message) }
                 .getOrDefault(emptyList())
