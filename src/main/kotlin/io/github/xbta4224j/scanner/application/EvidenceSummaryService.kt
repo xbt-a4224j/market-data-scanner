@@ -5,7 +5,8 @@ import io.github.xbta4224j.scanner.indexing.PoolDetection
 import org.slf4j.LoggerFactory
 import org.springframework.ai.chat.model.ChatModel
 import org.springframework.ai.chat.prompt.Prompt
-import org.springframework.beans.factory.ObjectProvider
+import org.springframework.beans.factory.BeanFactory
+import org.springframework.beans.factory.NoSuchBeanDefinitionException
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.stereotype.Service
 
@@ -23,14 +24,28 @@ import org.springframework.stereotype.Service
  */
 @Service
 class EvidenceSummaryService(
-    private val chatModelProvider: ObjectProvider<ChatModel>,
+    private val beanFactory: BeanFactory,
 ) {
     private val log = LoggerFactory.getLogger(javaClass)
     private val mapper = ObjectMapper()
 
+    /**
+     * Look up the Anthropic ChatModel bean by NAME instead of by type. The
+     * Spring AI starter for OpenAI auto-configures its own ChatModel bean
+     * (we only want OpenAI for embeddings), so a by-type lookup is
+     * ambiguous - exactly what 500'd the pool-detail page. Resolving by
+     * name pins us to the bean we actually want and tolerates either bean
+     * being absent.
+     */
+    private fun resolveAnthropicChat(): ChatModel? = try {
+        beanFactory.getBean("anthropicChatModel", ChatModel::class.java)
+    } catch (_: NoSuchBeanDefinitionException) {
+        null
+    }
+
     @Cacheable("etherscan-labels", key = "'evsum-' + #pd.id")
     fun summarize(pd: PoolDetection): Summary {
-        val chat = chatModelProvider.ifAvailable
+        val chat = resolveAnthropicChat()
         if (chat == null) {
             return Summary(
                 markdown = """
