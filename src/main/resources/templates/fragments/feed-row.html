@@ -10,12 +10,20 @@
            th:title="${pool.tokenAddress}"
            th:text="${pool.shortTokenAddress}">0x0..0</a>
     </td>
-    <td class="addr muted"
-        th:title="${pool.deployerAddress}"
-        th:text="${pool.shortDeployerAddress}">0x0..0</td>
-    <td class="addr muted"
-        th:title="${pool.pairedWithAddress}"
-        th:text="${pool.shortPairedWithAddress}">0x0..0</td>
+    <td class="addr muted">
+        <a th:if="${pool.deployerAddress != ''}"
+           th:href="|https://etherscan.io/address/${pool.deployerAddress}|"
+           target="_blank" rel="noreferrer"
+           th:title="${pool.deployerAddress}"
+           th:text="${pool.shortDeployerAddress}">0x0..0</a>
+        <span th:unless="${pool.deployerAddress != ''}" class="muted">&mdash;</span>
+    </td>
+    <td class="addr muted">
+        <a th:href="|https://etherscan.io/token/${pool.pairedWithAddress}|"
+           target="_blank" rel="noreferrer"
+           th:title="${pool.pairedWithAddress}"
+           th:text="${pool.shortPairedWithAddress}">0x0..0</a>
+    </td>
     <td class="numeric" th:text="${pool.feeTier / 10000.0} + '%'">0.30%</td>
     <td>
         <span class="risk-badge"

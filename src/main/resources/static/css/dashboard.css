@@ -392,6 +392,67 @@ footer.foot a:hover { color: var(--link); }
   margin-left: 4px;
 }
 
+/* EVIDENCE RENDERING (heuristic-tab feed + pool-detail JSON) */
+.evidence-cell {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text-2);
+  padding: 8px 14px;
+  max-width: 560px;
+  line-height: 1.9;
+}
+.evidence-kv {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  margin: 2px 6px 2px 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface-2);
+  overflow: hidden;
+  vertical-align: middle;
+}
+.evidence-kv .k {
+  padding: 1px 6px;
+  background: var(--surface-2);
+  color: var(--text-3);
+  font-size: 10px;
+  border-right: 1px solid var(--border);
+}
+.evidence-kv .v {
+  padding: 1px 6px;
+  color: var(--text-1);
+  background: white;
+  font-size: 11px;
+}
+.evidence-link {
+  color: var(--link);
+  font-family: var(--mono);
+  font-size: 11px;
+  text-decoration: none;
+  border-bottom: 1px dotted currentColor;
+}
+.evidence-link:hover { color: var(--link-hover); border-bottom-style: solid; }
+.evidence-num   { font-variant-numeric: tabular-nums; color: var(--text-1); }
+.evidence-true  { color: var(--risk-low);  font-weight: 600; }
+.evidence-false { color: var(--text-3); }
+.evidence-cell .sep { color: var(--text-3); margin: 0 2px; }
+
+pre.json {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.55;
+  background: #fafaf9;
+  border: 1px solid var(--border);
+  padding: 14px 18px;
+  border-radius: 6px;
+  margin: 0;
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--text-1);
+}
+pre.json a.evidence-link { font-size: 11px; }
+
 /* LIVE EVENTS TAB */
 table.events td {
   padding: 7px 14px;

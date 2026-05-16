@@ -45,7 +45,7 @@
                     <h2>Per-heuristic results</h2>
                     <span class="desc">raw evidence payload from the composite scorer</span>
                 </div>
-                <pre class="json" th:text="${rawResults}">{}</pre>
+                <pre class="json" th:utext="${@evidenceFormatter.prettyJson(rawResults)}">{}</pre>
             </div>
         </div>
 
