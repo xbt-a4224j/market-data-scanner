@@ -14,8 +14,8 @@
             <div style="font-weight: 500; color: var(--text-2); margin-bottom: 4px;">
                 This heuristic is scaffolded but not yet wired to real on-chain reads.
             </div>
-            <div style="font-size: 13px; color: var(--text-3);"
-                 th:text="${meta.plannedSignal}">planned signal</div>
+            <div style="font-size: 13px; color: var(--text-3); line-height: 1.6;"
+                 th:utext="${meta.plannedSignal}">planned signal</div>
         </div>
     </div>
 
@@ -25,8 +25,8 @@
             <h2>What this heuristic does</h2>
             <span class="desc">version 1.0.0</span>
         </div>
-        <div style="padding: 16px 18px; color: var(--text-2); font-size: 13px; line-height: 1.6;"
-             th:text="${meta.description}">description</div>
+        <div class="heuristic-description"
+             th:utext="${meta.description}">description</div>
     </div>
 
     <!-- Recent rows -->

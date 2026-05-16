@@ -392,6 +392,64 @@ footer.foot a:hover { color: var(--link); }
   margin-left: 4px;
 }
 
+/* HEURISTIC DESCRIPTION COPY */
+.heuristic-description {
+  padding: 18px 22px;
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.heuristic-description p {
+  margin: 0 0 12px 0;
+}
+.heuristic-description p:last-child { margin-bottom: 0; }
+.heuristic-description code {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 5px;
+  color: var(--text-1);
+}
+.heuristic-description a {
+  color: var(--link);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.heuristic-description a:hover {
+  color: var(--link-hover);
+  border-bottom-color: currentColor;
+}
+.heuristic-description em {
+  color: var(--text-1);
+  font-style: normal;
+  font-weight: 600;
+}
+.heuristic-description strong { color: var(--text-1); }
+
+.stub-banner div div code,
+.stub-banner div div a,
+.stub-banner div div p {
+  /* Keep the stub-banner copy legible if it carries the same HTML payload */
+}
+.stub-banner code {
+  font-family: var(--mono);
+  font-size: 11px;
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+.stub-banner a {
+  color: var(--link);
+  border-bottom: 1px dotted currentColor;
+  text-decoration: none;
+}
+.stub-banner a:hover { color: var(--link-hover); border-bottom-style: solid; }
+.stub-banner p { margin: 0 0 8px 0; }
+.stub-banner p:last-child { margin-bottom: 0; }
+
 /* EVIDENCE RENDERING (heuristic-tab feed + pool-detail JSON) */
 .evidence-cell {
   font-family: var(--mono);
