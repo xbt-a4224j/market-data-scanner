@@ -22,7 +22,8 @@
                           th:classappend="'risk-' + ${p.riskBand}"
                           th:text="${p.compositeScore}">0</span>
                     <div>
-                        <div style="font-weight: 600; font-size: 16px;" th:text="${p.riskBand.toUpperCase()} + ' RISK'">LOW RISK</div>
+                        <div style="font-weight: 600; font-size: 16px;"
+                             th:text="${p.riskBand == 'high' ? 'HIGH RISK' : (p.riskBand == 'med' ? 'MEDIUM RISK' : 'LOW RISK')}">LOW RISK</div>
                         <div class="muted" style="font-size: 12px; margin-top: 4px;">
                             <span th:text="${p.flaggedSignals.size()}">0</span> flagged signal(s) at confidence >= 0.5
                         </div>

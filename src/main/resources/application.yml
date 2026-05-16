@@ -103,6 +103,13 @@ admin:
 server:
   port: ${PORT:8080}
   shutdown: graceful
+  error:
+    # AppErrorController owns /error; whitelabel off so we never accidentally
+    # ship the "There was an unexpected error" page if a template is missing.
+    whitelabel:
+      enabled: false
+    include-message: always
+    include-stacktrace: never
 
 logging:
   pattern:

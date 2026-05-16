@@ -58,9 +58,14 @@ data class PoolDetectionDto(
             shortTxHash = shortAddress(pd.txHash),
         )
 
+        // Returns the CSS-class suffix ("low" / "med" / "high"); the
+        // dashboard's risk-band donut uses the same three buckets via
+        // .risk-low, .risk-med, .risk-high. Previously returned "medium"
+        // which silently fell through to the default black-on-transparent
+        // badge style.
         private fun riskBand(score: Int): String = when {
             score >= 70 -> "high"
-            score >= 40 -> "medium"
+            score >= 40 -> "med"
             else -> "low"
         }
 

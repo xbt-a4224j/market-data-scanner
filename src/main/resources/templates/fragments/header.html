@@ -10,44 +10,57 @@
             crossorigin="anonymous"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10/dist/ext/sse.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script th:src="@{/js/dashboard-shared.js}" defer></script>
 </head>
 <body th:fragment="topbar(activeTab)">
 <header class="topbar">
     <div class="logo"><span class="dot"></span>Market Data Scanner</div>
     <span class="conn"><span class="blob"></span>live</span>
     <div class="meta">
-        <span><strong>Uniswap V3</strong> &middot; Ethereum mainnet</span>
+        <div class="network-picker" title="Multi-chain support is roadmap; mainnet-only today">
+            <label for="network-select" class="network-label">DEX</label>
+            <select id="dex-select" disabled>
+                <option>Uniswap V3</option>
+            </select>
+            <span class="network-sep">on</span>
+            <label for="network-select" class="network-label">Chain</label>
+            <select id="network-select" disabled>
+                <option>Ethereum mainnet</option>
+            </select>
+            <span class="network-soon">multi-chain soon</span>
+        </div>
     </div>
 </header>
-<nav class="tabs" th:with="active=${activeTab}">
-    <a th:href="@{/}" th:classappend="${active == 'overview' ? 'active' : ''}">Overview</a>
-    <a th:href="@{/heuristics/supply_concentration}"
-       th:classappend="${active == 'supply_concentration' ? 'active' : ''}">Supply Concentration</a>
-    <a th:href="@{/heuristics/lp_lock}"
-       th:classappend="${active == 'lp_lock' ? 'active' : ''}">LP Lock</a>
-    <a th:href="@{/heuristics/deployer_history}"
-       th:classappend="${active == 'deployer_history' ? 'active' : ''}">Deployer History</a>
-    <a th:href="@{/heuristics/metadata_similarity}"
-       th:classappend="${active == 'metadata_similarity' ? 'active' : ''}">Metadata Similarity<span class="stub-badge">Stub</span></a>
-    <a th:href="@{/heuristics/funding_flow}"
-       th:classappend="${active == 'funding_flow' ? 'active' : ''}">Funding Flow<span class="stub-badge">Stub</span></a>
-    <a th:href="@{/heuristics/source_code_pattern}"
-       th:classappend="${active == 'source_code_pattern' ? 'active' : ''}">Source Code<span class="stub-badge">Stub</span></a>
-    <a th:href="@{/heuristics/first_n_buyers}"
-       th:classappend="${active == 'first_n_buyers' ? 'active' : ''}">First-N Buyers<span class="stub-badge">Stub</span></a>
-    <a th:href="@{/heuristics/social_media_correlation}"
-       th:classappend="${active == 'social_media_correlation' ? 'active' : ''}">Social Media<span class="stub-badge">Stub</span></a>
-    <span style="margin-left: auto; display: flex; gap: 0;">
+<nav class="tabs-wrap">
+    <div class="tabs" th:with="active=${activeTab}">
+        <a th:href="@{/}" th:classappend="${active == 'overview' ? 'active' : ''}">Overview</a>
+        <a th:href="@{/heuristics/supply_concentration}"
+           th:classappend="${active == 'supply_concentration' ? 'active' : ''}">Supply Concentration</a>
+        <a th:href="@{/heuristics/lp_lock}"
+           th:classappend="${active == 'lp_lock' ? 'active' : ''}">LP Lock</a>
+        <a th:href="@{/heuristics/deployer_history}"
+           th:classappend="${active == 'deployer_history' ? 'active' : ''}">Deployer History</a>
+        <a th:href="@{/heuristics/metadata_similarity}"
+           th:classappend="${active == 'metadata_similarity' ? 'active' : ''}">Metadata Similarity<span class="stub-badge">Stub</span></a>
+        <a th:href="@{/heuristics/funding_flow}"
+           th:classappend="${active == 'funding_flow' ? 'active' : ''}">Funding Flow<span class="stub-badge">Stub</span></a>
+        <a th:href="@{/heuristics/source_code_pattern}"
+           th:classappend="${active == 'source_code_pattern' ? 'active' : ''}">Source Code<span class="stub-badge">Stub</span></a>
+        <a th:href="@{/heuristics/first_n_buyers}"
+           th:classappend="${active == 'first_n_buyers' ? 'active' : ''}">First-N Buyers<span class="stub-badge">Stub</span></a>
+        <a th:href="@{/heuristics/social_media_correlation}"
+           th:classappend="${active == 'social_media_correlation' ? 'active' : ''}">Social Media<span class="stub-badge">Stub</span></a>
+        <span class="tabs-sep"></span>
         <a th:href="@{/admin/queue}"
            th:classappend="${active == 'admin' ? 'active' : ''}"
-           style="color: var(--text-3);">Queue</a>
-        <a th:href="@{/admin/runs}" style="color: var(--text-3);">Runs</a>
-        <a th:href="@{/admin/backfill}" style="color: var(--text-3);">Backfill</a>
-        <a th:href="@{/admin/audit}" style="color: var(--text-3);">Audit</a>
-        <a th:href="@{/admin/corpus}" style="color: var(--text-3);">Corpus</a>
-        <a th:href="@{/admin/events}" style="color: var(--text-3);">Live events</a>
-        <a th:href="@{/admin/logs}" style="color: var(--text-3);">Logs</a>
-    </span>
+           class="tab-admin">Queue</a>
+        <a th:href="@{/admin/runs}" class="tab-admin">Runs</a>
+        <a th:href="@{/admin/backfill}" class="tab-admin">Backfill</a>
+        <a th:href="@{/admin/audit}" class="tab-admin">Audit</a>
+        <a th:href="@{/admin/corpus}" class="tab-admin">Corpus</a>
+        <a th:href="@{/admin/events}" class="tab-admin">Live events</a>
+        <a th:href="@{/admin/logs}" class="tab-admin">Logs</a>
+    </div>
 </nav>
 </body>
 <footer th:fragment="foot" class="foot">

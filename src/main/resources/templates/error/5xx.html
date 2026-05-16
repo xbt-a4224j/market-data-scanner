@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/header :: head('Server error')}"></head>
+<body>
+<div th:replace="~{fragments/header :: topbar('overview')}"></div>
+<main>
+    <div class="error-card error-card-500">
+        <div class="error-status">
+            <span class="error-code" th:text="${status} ?: 500">500</span>
+            <span class="error-label" th:text="${error} ?: 'Internal Server Error'">Internal Server Error</span>
+        </div>
+        <h1 class="page-title" style="margin-top: 0;">
+            Something went wrong on the server
+        </h1>
+        <p class="page-subtitle" style="max-width: 600px;">
+            We hit an unexpected error rendering
+            <code class="mono" th:text="${path} ?: '(unknown)'">/</code>.
+            The exception has been logged to the in-memory buffer; check the
+            <a th:href="@{/admin/events}">live events tab</a> or the
+            <a th:href="@{/admin/logs}">logs tab</a> (filter level = ERROR)
+            for the stack trace.
+        </p>
+        <p class="page-subtitle" th:if="${message != null and message != ''}"
+           style="color: var(--text-3);"
+           th:text="${message}">message</p>
+        <div class="error-actions">
+            <a class="error-btn primary" th:href="@{/}">Back to overview</a>
+            <a class="error-btn" th:href="@{/admin/events}">Live events</a>
+            <a class="error-btn" th:href="@{/actuator/health}">Health</a>
+        </div>
+    </div>
+</main>
+<div th:replace="~{fragments/header :: foot}"></div>
+</body>
+</html>

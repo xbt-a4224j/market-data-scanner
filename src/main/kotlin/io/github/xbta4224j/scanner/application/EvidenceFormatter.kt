@@ -106,11 +106,21 @@ class EvidenceFormatter(private val mapper: ObjectMapper) {
         return out
     }
 
-    private fun formatNumber(n: Number): String =
-        when (n) {
-            is Double, is Float -> "%.4f".format(n.toDouble()).trimEnd('0').trimEnd('.')
-            else -> n.toString()
+    private fun formatNumber(n: Number): String {
+        // Integers and integer-valued doubles render as integers ("0", "23").
+        // Real-valued doubles cap at 2 decimal places with trailing zeros
+        // stripped, so spanDays=110.3997222222 displays as 110.4 instead of
+        // dumping the full IEEE-754 representation into the UI.
+        return when (n) {
+            is Long, is Int, is Short, is Byte -> n.toString()
+            else -> {
+                val d = n.toDouble()
+                if (d.isNaN() || d.isInfinite()) "-"
+                else if (d == d.toLong().toDouble()) d.toLong().toString()
+                else "%.2f".format(d).trimEnd('0').trimEnd('.')
+            }
         }
+    }
 
     private fun escapeHtml(s: String): String =
         s.replace("&", "&amp;")

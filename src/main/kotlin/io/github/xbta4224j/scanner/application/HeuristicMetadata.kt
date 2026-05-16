@@ -21,7 +21,16 @@ object HeuristicMetadata {
         val description: String,
         val plannedSignal: String,
         val displayHint: String,
+        /**
+         * Three-stage pseudocode strip rendered above the prose on the
+         * heuristic tab. Order: Inputs, Source, Score. Lets a senior
+         * reviewer skim the data-lineage in one glance without reading
+         * the description paragraph.
+         */
+        val pipeline: Pipeline? = null,
     )
+
+    data class Pipeline(val inputs: String, val source: String, val score: String)
 
     val ALL: List<Entry> = listOf(
         Entry(
@@ -29,6 +38,11 @@ object HeuristicMetadata {
             title = "Supply Concentration",
             tagline = "Top-K holder distribution + Gini coefficient",
             implemented = true,
+            pipeline = Pipeline(
+                inputs = "token address, creation block, pool-creation block",
+                source = "eth_getLogs(Transfer) replayed into a balance map",
+                score = "weighted(top1 share, top3 share, Gini); confidence by holder count",
+            ),
             description = """
                 <p>Walks every <code>Transfer</code> event on the new token between its
                 creation block and the V3 pool-creation block, replays each address's
@@ -54,6 +68,11 @@ object HeuristicMetadata {
             title = "LP Lock",
             tagline = "Initial-liquidity destination + USD value",
             implemented = true,
+            pipeline = Pipeline(
+                inputs = "pool address, first Mint tx",
+                source = "eth_getLogs(Mint) + NonfungiblePositionManager.ownerOf + CoinGecko spot",
+                score = "destination class (deployer/burn/lock) gated by USD liquidity floor",
+            ),
             description = """
                 <p>Decodes the first <code>Mint</code> event on the V3 pool, reads the
                 position-NFT owner from the
@@ -81,6 +100,11 @@ object HeuristicMetadata {
             title = "Deployer History",
             tagline = "Serial scam-factory deployer fingerprint",
             implemented = true,
+            pipeline = Pipeline(
+                inputs = "deployer EOA",
+                source = "Etherscan getContractCreations + name-tag lookup (Caffeine-cached 30m)",
+                score = "min(1.0, priorCount/50) * 0.6 + burst24hFactor * 0.4; +0.2 if tagged",
+            ),
             description = """
                 <p>Pulls the deployer EOA's full prior contract-creation history from
                 Etherscan's <code>txlist</code> endpoint, computes

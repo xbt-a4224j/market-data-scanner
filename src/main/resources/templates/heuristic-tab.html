@@ -25,6 +25,22 @@
             <h2>What this heuristic does</h2>
             <span class="desc">version 1.0.0</span>
         </div>
+        <div th:if="${meta.pipeline != null}" class="pipeline-strip">
+            <div class="pipe-stage">
+                <div class="pipe-label">Inputs</div>
+                <div class="pipe-value mono" th:text="${meta.pipeline.inputs}">inputs</div>
+            </div>
+            <div class="pipe-arrow" aria-hidden="true">&rarr;</div>
+            <div class="pipe-stage">
+                <div class="pipe-label">Source</div>
+                <div class="pipe-value mono" th:text="${meta.pipeline.source}">source</div>
+            </div>
+            <div class="pipe-arrow" aria-hidden="true">&rarr;</div>
+            <div class="pipe-stage">
+                <div class="pipe-label">Score</div>
+                <div class="pipe-value mono" th:text="${meta.pipeline.score}">score</div>
+            </div>
+        </div>
         <div class="heuristic-description"
              th:utext="${meta.description}">description</div>
     </div>
@@ -56,7 +72,11 @@
             </tr>
             <th:block th:unless="${rows.isEmpty()}" th:each="row : ${rows}">
                 <tr>
-                    <td class="mono muted" th:text="${row.pool.detectedAtTime}">--:--:--</td>
+                    <td class="mono muted">
+                        <time th:attr="data-iso=${row.pool.detectedAt}"
+                              th:text="${row.pool.detectedAtTime}"
+                              th:title="${row.pool.detectedAt}">--:--:--</time>
+                    </td>
                     <td class="addr">
                         <a th:href="@{|/pool/${row.pool.id}|}"
                            th:title="${row.pool.tokenAddress}"

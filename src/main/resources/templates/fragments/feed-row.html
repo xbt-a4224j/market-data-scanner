@@ -3,19 +3,42 @@
 <body>
 <tr th:fragment="row(pool)"
     th:class="${rowClass != null} ? ${rowClass} : ''">
-    <td class="mono muted" th:text="${pool.detectedAtTime}">--:--:--</td>
+    <td class="mono muted">
+        <time th:attr="data-iso=${pool.detectedAt}"
+              th:text="${pool.detectedAtTime}"
+              th:title="${pool.detectedAt}">--:--:--</time>
+    </td>
     <td class="numeric" th:text="${pool.blockNumber}">0</td>
     <td class="addr">
-        <a th:href="@{|/pool/${pool.id}|}"
-           th:title="${pool.tokenAddress}"
-           th:text="${pool.shortTokenAddress}">0x0..0</a>
+        <span class="addr-cell">
+            <a th:href="@{|/pool/${pool.id}|}"
+               th:title="${pool.tokenAddress}"
+               th:text="${pool.shortTokenAddress}">0x0..0</a>
+            <button type="button" class="copy-btn"
+                    th:attr="data-copy=${pool.tokenAddress}"
+                    title="Copy token address" aria-label="Copy">
+                <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true">
+                    <rect x="4.5" y="4.5" width="9" height="9" rx="1.5" fill="none" stroke="currentColor"/>
+                    <path d="M2.5 11V3.5A1 1 0 0 1 3.5 2.5H11" fill="none" stroke="currentColor"/>
+                </svg>
+            </button>
+        </span>
     </td>
     <td class="addr muted">
-        <a th:if="${pool.deployerAddress != ''}"
-           th:href="|https://etherscan.io/address/${pool.deployerAddress}|"
-           target="_blank" rel="noreferrer"
-           th:title="${pool.deployerAddress}"
-           th:text="${pool.shortDeployerAddress}">0x0..0</a>
+        <span class="addr-cell" th:if="${pool.deployerAddress != ''}">
+            <a th:href="|https://etherscan.io/address/${pool.deployerAddress}|"
+               target="_blank" rel="noreferrer"
+               th:title="${pool.deployerAddress}"
+               th:text="${pool.shortDeployerAddress}">0x0..0</a>
+            <button type="button" class="copy-btn"
+                    th:attr="data-copy=${pool.deployerAddress}"
+                    title="Copy deployer address" aria-label="Copy">
+                <svg viewBox="0 0 16 16" width="11" height="11" aria-hidden="true">
+                    <rect x="4.5" y="4.5" width="9" height="9" rx="1.5" fill="none" stroke="currentColor"/>
+                    <path d="M2.5 11V3.5A1 1 0 0 1 3.5 2.5H11" fill="none" stroke="currentColor"/>
+                </svg>
+            </button>
+        </span>
         <span th:unless="${pool.deployerAddress != ''}" class="muted">&mdash;</span>
     </td>
     <td class="addr muted">

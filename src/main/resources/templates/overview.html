@@ -44,20 +44,28 @@
                 <span class="desc">last 50 detections &middot; bucketed in 10-pt bands</span>
                 <span class="right" id="histSummary"></span>
             </div>
-            <div style="padding: 14px 18px; height: 240px;">
-                <canvas id="scoreHistogram"></canvas>
+            <div class="chart-frame" style="height: 240px;">
+                <div id="histSkeleton" class="chart-skeleton chart-skeleton-bars">
+                    <span></span><span></span><span></span><span></span>
+                    <span></span><span></span><span></span><span></span>
+                    <span></span><span></span>
+                </div>
+                <canvas id="scoreHistogram" style="display:none;"></canvas>
             </div>
         </div>
         <div class="card">
             <div class="card-header">
                 <h2>Risk band split</h2>
             </div>
-            <div style="padding: 14px 18px; height: 220px;">
-                <canvas id="riskDonut"></canvas>
+            <div class="chart-frame" style="height: 220px;">
+                <div id="donutSkeleton" class="chart-skeleton chart-skeleton-donut">
+                    <div class="donut-ring"></div>
+                </div>
+                <canvas id="riskDonut" style="display:none;"></canvas>
             </div>
             <div class="chart-footnote">
                 Most often paired with
-                <strong id="mostCommonPair">--</strong>
+                <strong id="mostCommonPair">&hellip;</strong>
             </div>
         </div>
     </div>
@@ -114,6 +122,8 @@
 
     const hist = await fetchJson('/api/charts/score-histogram');
     document.getElementById('histSummary').textContent = hist.summary || '';
+    document.getElementById('histSkeleton').style.display = 'none';
+    document.getElementById('scoreHistogram').style.display = '';
     new Chart(document.getElementById('scoreHistogram'), {
         type: 'bar',
         data: {
@@ -150,6 +160,8 @@
 
     const bands = await fetchJson('/api/charts/risk-bands');
     document.getElementById('mostCommonPair').textContent = bands.mostCommonPair;
+    document.getElementById('donutSkeleton').style.display = 'none';
+    document.getElementById('riskDonut').style.display = '';
     new Chart(document.getElementById('riskDonut'), {
         type: 'doughnut',
         data: {
