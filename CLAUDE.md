@@ -371,7 +371,7 @@ fly postgres attach scanner-pg
 
 - Not a multi-chain scanner. Ethereum mainnet only. Cross-chain is in the "next iteration" notes, not the code.
 - Not a multi-DEX scanner. Uniswap V3 only. SushiSwap, PancakeSwap, etc. are stubs in the source-discovery layer.
-- No emojis in code, comments, commits, dashboard text, or PR descriptions. The no-emoji discipline is a tech-lead habit worth maintaining.
+- No emojis in code, comments, commits, dashboard text, or PR descriptions.
 
 ---
 

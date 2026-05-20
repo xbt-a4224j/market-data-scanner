@@ -10,10 +10,8 @@ are unfamiliar or invented, the conversation gets stuck on shape; if they are
 canonical, the conversation moves to what actually differentiates this repo —
 the heuristics and the operator surface.
 
-The reference layer model used here is the one Allium publishes in
-*"Blockchain Analytics Stack Explained: Architecture, Layers and Tools"*
-([allium.so/blog](https://www.allium.so/blog/blockchain-analytics-stack-explained-architecture-layers-and-tools)).
-It is a six-layer pipeline:
+The reference layer model used here is the canonical six-layer pipeline
+split widely used across blockchain-analytics stacks:
 
 ```
 Data Ingestion (Node Infra)  ->  Normalization & Decoding  ->  Indexing
@@ -27,13 +25,13 @@ abstractions extracted to keep each layer open for extension.
 
 ## Decision
 
-Each layer is one package. Names match the Allium model so a reviewer
+Each layer is one package. Names match the canonical model so a reviewer
 landing in `src/main/kotlin/io/github/xbta4224j/scanner/` sees the
-canonical pipeline at a glance — no mapping required. Cross-cutting
+pipeline at a glance — no mapping required. Cross-cutting
 concerns (`config/`, `observability/`) sit beside the pipeline, not in
 it.
 
-| Allium layer | Role | Package | Key types | Library |
+| Layer | Role | Package | Key types | Library |
 |---|---|---|---|---|
 | 1. Data Ingestion (Node Infra) | Subscribe / pull blocks + logs from RPC | `ingestion/` | `BlockSource`, `LiveBlockSource` (WSS), `BackfillBlockSource` (getLogs), `IngestionPipeline`, `EtherscanClient`, `PriceOracle`, `WatermarkService` | web3j 4.12 (HTTP + WebSocket transports), Spring `RestClient` for external HTTP |
 | 2. Normalization & Decoding | ABI-decode raw logs into typed events | `decoding/` | `EventDecoder<T>` interface, `PoolCreatedDecoder : EventDecoder<TokenContext>`, `MintLogReader`, `TransferLogReader`, `NpmPositionTracer`, `LockContracts`, `KnownTokens`, `TokenContext` | web3j ABI codec (`Event`, `EventEncoder`, `FunctionReturnDecoder`) |
@@ -108,4 +106,3 @@ it.
 - ADR-002 — two-table ingestion ledger; central claim that live and backfill
   share the pipeline
 - ADR-005 — three-implemented + five-stubbed heuristic balance
-- Allium, *"Blockchain Analytics Stack Explained: Architecture, Layers and Tools"*

@@ -27,3 +27,6 @@ data/*.parquet
 # Autonomous-run progress log (visible to user, not for the repo)
 PROGRESS
 PROGRESS.md
+
+# Local-only docs (study notes, call prep, deep dives) - never publish
+docs/*.html

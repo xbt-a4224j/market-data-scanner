@@ -2,6 +2,8 @@
 
 Real-time risk-surveillance pipeline for new Uniswap V3 pools on Ethereum mainnet. Built in Kotlin + Spring Boot + web3j with Postgres + pgvector for storage and Spring AI for embedding-based heuristics.
 
+![Dashboard](img.png)
+
 See [`CLAUDE.md`](CLAUDE.md) for the full architecture context and [`ISSUES.md`](ISSUES.md) for the issue breakdown.
 
 ## Quick start
